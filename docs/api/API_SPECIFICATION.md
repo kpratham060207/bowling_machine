@@ -23,7 +23,7 @@ REST API served by the Fastify backend. All request/response bodies are JSON. Al
 
 HTTP route handlers for auth, profile, and **machine control** are **implemented (Phase 1D–1E)**. Session and delivery routes remain future phases.
 
-### Implemented routes (Phase 1D)
+### Implemented routes (Phase 1D–1E)
 
 | Method | Path                    | Auth | Role   | Status             |
 | ------ | ----------------------- | ---- | ------ | ------------------ |
@@ -31,6 +31,15 @@ HTTP route handlers for auth, profile, and **machine control** are **implemented
 | POST   | `/api/v1/auth/register` | No   | —      | Implemented        |
 | GET    | `/api/v1/profile`       | Yes  | PLAYER | Implemented        |
 | PUT    | `/api/v1/profile`       | Yes  | PLAYER | Implemented        |
+| GET    | `/machines`             | Yes  | PLAYER | Implemented (1E)   |
+| GET    | `/machines/:id`         | Yes  | PLAYER | Implemented (1E)   |
+| GET    | `/machines/:id/status`  | Yes  | PLAYER | Implemented (1E)   |
+| POST   | `/machines/connect`     | Yes  | PLAYER | Implemented (1E)   |
+| POST   | `/machines/:id/control/acquire` | Yes | PLAYER | Implemented (1E) |
+| POST   | `/machines/:id/control/release` | Yes | PLAYER | Implemented (1E) |
+| POST   | `/machines/:id/stop`    | Yes  | PLAYER | Implemented (1E)   |
+| POST   | `/machines/:id/home`    | Yes  | PLAYER | Implemented (1E)   |
+| POST   | `/machines/:id/disconnect` | Yes | PLAYER | Implemented (1E) |
 | GET    | `/api/v1/admin/status`  | Yes  | ADMIN  | Implemented (stub) |
 
 ## Validation layers
