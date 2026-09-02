@@ -8,6 +8,13 @@
       "when": 1788362238689,
       "tag": "0000_stiff_mandroid",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788362239000,
+      "tag": "0001_machine_control_locks",
+      "breakpoints": true
     }
   ]
 }

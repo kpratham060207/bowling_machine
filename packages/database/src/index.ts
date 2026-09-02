@@ -8,4 +8,9 @@
 export * from './schema/index';
 export { createDatabase, getDatabaseUrl, type Database } from './client';
 export { runMigrations } from './migrate';
-export { seedDevelopmentData, SEED_IDS } from './seed';
+export {
+  seedDevelopmentData,
+  SEED_IDS,
+  DEV_SIMULATOR_CONNECTION_SECRET,
+  DEV_SIMULATOR_CONNECTION_SECRET_HASH,
+} from './seed';

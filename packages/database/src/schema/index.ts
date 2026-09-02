@@ -14,6 +14,7 @@ export * from './telemetry';
 export * from './faults';
 export * from './calibration-profiles';
 export * from './audit-logs';
+export * from './machine-control-locks';
 
 import { users } from './users';
 import { profiles } from './profiles';
@@ -30,6 +31,7 @@ import { telemetrySamples } from './telemetry';
 import { faults } from './faults';
 import { calibrationProfiles } from './calibration-profiles';
 import { auditLogs } from './audit-logs';
+import { machineControlLocks } from './machine-control-locks';
 
 /** Combined schema object for Drizzle client and migrations. */
 export const schema = {
@@ -48,4 +50,5 @@ export const schema = {
   faults,
   calibrationProfiles,
   auditLogs,
+  machineControlLocks,
 };

@@ -18,6 +18,13 @@ import {
   users,
 } from './schema/index';
 
+/** Known dev simulator connection secret — NOT for production (UD-21 provisional). */
+export const DEV_SIMULATOR_CONNECTION_SECRET = 'dev-simulator-secret-001';
+
+/** SHA-256 hex hash of DEV_SIMULATOR_CONNECTION_SECRET for machine_registrations. */
+export const DEV_SIMULATOR_CONNECTION_SECRET_HASH =
+  'c5d430e76d88c9ee0bf72f0d6a04543fd01024790eb165c976f2c4f377dd44cf';
+
 /** Fixed UUIDs for reproducible local development. */
 export const SEED_IDS = {
   devUser: '11111111-1111-4111-8111-111111111111',
@@ -62,8 +69,8 @@ export async function seedDevelopmentData(databaseUrl = getDatabaseUrl()): Promi
         id: SEED_IDS.devRegistration,
         machineId: SEED_IDS.devMachine,
         qrCodeToken: 'dev-qr-token-simulator-001',
-        /** Placeholder hash — replace in Phase 1D with real hashed secret. */
-        connectionSecretHash: '$2b$10$devplaceholderhashnotforproductionuse000000000000000000',
+        /** SHA-256 hash of DEV_SIMULATOR_CONNECTION_SECRET — provisional UD-21 peer auth. */
+        connectionSecretHash: DEV_SIMULATOR_CONNECTION_SECRET_HASH,
       })
       .onConflictDoNothing();
 

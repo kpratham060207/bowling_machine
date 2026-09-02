@@ -4,3 +4,4 @@ export * from './enums.js';
 export * from './identity.js';
 export * from './connection.js';
 export * from './status.js';
+export * from './control.js';
