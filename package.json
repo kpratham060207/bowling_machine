@@ -21,6 +21,7 @@
     "test": "pnpm --filter './packages/*' build && vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:hardware": "echo 'Hardware integration tests require physical ESP32 — set HARDWARE_TEST=1 and configure machine env. Not run in CI.' && exit 0",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",

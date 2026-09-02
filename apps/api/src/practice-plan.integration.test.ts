@@ -14,6 +14,7 @@ import {
   users,
 } from '@bowling-machine/database';
 import { VALID_DELIVERY_REQUEST } from '@bowling-machine/calculation-engine';
+import { SIMULATION_CALIBRATION_V1_PROFILE } from '@bowling-machine/calculation-engine';
 import { buildApiServer } from './server.js';
 import { createTestApiEnv, signTestAccessToken } from './test/test-helpers.js';
 import type { ApiEnv } from './config/env.js';
@@ -257,7 +258,7 @@ describe('practice plan integration', () => {
       headers: { authorization: `Bearer ${adminToken}` },
       payload: {
         calibration_type: 'simulator_test',
-        data: { _simulation: true, max_balls_per_sequence: 24 },
+        data: SIMULATION_CALIBRATION_V1_PROFILE.data,
         notes: 'Integration test profile',
       },
     });
