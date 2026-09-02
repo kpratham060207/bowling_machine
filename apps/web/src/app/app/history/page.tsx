@@ -9,7 +9,11 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useAuthenticatedServices } from '@/hooks/use-authenticated-services';
 import { ApiClientError } from '@/lib/api/errors';
 
-/** Player session history — lists persisted sessions from the backend. */
+function countByStatus(session: PracticeSession, status: string): number {
+  return session.deliveries.filter((d) => d.status === status).length;
+}
+
+/** Player session history — readable summaries without invented analytics. */
 export default function HistoryPage() {
   const { api } = useAuthenticatedServices();
   const [sessions, setSessions] = useState<PracticeSession[]>([]);
@@ -49,28 +53,39 @@ export default function HistoryPage() {
 
       {!loading && sessions.length > 0 ? (
         <ul className="space-y-3">
-          {sessions.map((session) => (
-            <li key={session.session_id} className="card">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold capitalize">{session.status.toLowerCase()}</p>
-                  <p className="text-sm text-slate-600">
-                    {new Date(session.started_at).toLocaleString()}
-                  </p>
-                  <p className="text-sm text-slate-600">
-                    {session.deliveries.length} deliveries · {session.total_balls_delivered}/
-                    {session.total_balls_planned} balls
-                  </p>
+          {sessions.map((session) => {
+            const failed = countByStatus(session, 'FAILED');
+            const cancelled = countByStatus(session, 'CANCELLED');
+            return (
+              <li key={session.session_id} className="card">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold capitalize">{session.status.toLowerCase()}</p>
+                    <p className="text-sm text-slate-600">
+                      {new Date(session.started_at).toLocaleString()}
+                    </p>
+                    <p className="text-sm text-slate-600">
+                      {session.machine_name ?? 'Machine'} · {session.deliveries.length} deliveries ·{' '}
+                      {session.total_balls_delivered}/{session.total_balls_planned} balls
+                    </p>
+                    {failed > 0 || cancelled > 0 ? (
+                      <p className="text-sm text-amber-800">
+                        {failed > 0 ? `${failed} failed` : null}
+                        {failed > 0 && cancelled > 0 ? ' · ' : null}
+                        {cancelled > 0 ? `${cancelled} cancelled` : null}
+                      </p>
+                    ) : null}
+                  </div>
+                  <Link
+                    href={`/app/history/${session.session_id}`}
+                    className="btn-secondary shrink-0"
+                  >
+                    Details
+                  </Link>
                 </div>
-                <Link
-                  href={`/app/history/${session.session_id}`}
-                  className="btn-secondary shrink-0"
-                >
-                  Details
-                </Link>
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       ) : null}
     </div>
