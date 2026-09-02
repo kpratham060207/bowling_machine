@@ -1,12 +1,15 @@
 /**
  * @vitest-environment happy-dom
+ *
+ * Profile page tests live outside the App Router tree so Next.js dev/build
+ * never treats colocated files under app/ as route artifacts.
  */
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import type { Player } from '@bowling-machine/api-contracts';
+import AppProfilePage from '@/app/app/profile/page';
 import { ApiClientError } from '@/lib/api/errors';
-import AppProfilePage from './page';
 
 const sampleProfile: Player = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -35,6 +38,24 @@ describe('AppProfilePage', () => {
 
   afterEach(() => {
     cleanup();
+  });
+
+  it('renders the profile form after loading', async () => {
+    render(<AppProfilePage />);
+
+    expect(await screen.findByRole('heading', { name: 'Your profile' })).toBeTruthy();
+    expect(await screen.findByDisplayValue('Player One')).toBeTruthy();
+  });
+
+  it('shows a load error instead of a blank page when profile fetch fails', async () => {
+    mockApi.getProfile.mockRejectedValue(
+      new ApiClientError(404, 'NOT_FOUND', 'Player profile not found'),
+    );
+
+    render(<AppProfilePage />);
+
+    expect(await screen.findByText('The requested resource was not found.')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Your profile' })).toBeTruthy();
   });
 
   it('submits the edited profile fields to the API client', async () => {
