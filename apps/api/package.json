@@ -17,6 +17,7 @@
     "@bowling-machine/database": "workspace:*",
     "@bowling-machine/shared": "workspace:*",
     "@fastify/cors": "^11.3.0",
+    "@fastify/websocket": "^11.0.2",
     "@supabase/supabase-js": "^2.114.0",
     "drizzle-orm": "^0.38.2",
     "fastify": "^5.12.1",
@@ -26,7 +27,9 @@
   "devDependencies": {
     "@bowling-machine/config": "workspace:*",
     "@types/node": "^22.10.2",
+    "@types/ws": "^8.5.13",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "ws": "^8.18.0"
   }
 }

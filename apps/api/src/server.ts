@@ -15,17 +15,34 @@ import { registerHealthRoutes } from './routes/health.routes.js';
 import { registerAuthRoutes } from './routes/auth.routes.js';
 import { registerProfileRoutes } from './routes/profile.routes.js';
 import { registerAdminRoutes } from './routes/admin.routes.js';
+import { registerMachineRoutes } from './routes/machine.routes.js';
+import { MachineEventBus } from './gateway/event-bus.js';
+import { DefaultMachineGateway } from './gateway/machine-gateway.js';
+import { MachineService } from './services/machine.service.js';
+import { MachineCommandService } from './services/machine-command.service.js';
+import { registerMachineWebSocketRoutes } from './websocket/machine-ws.js';
+import { registerBrowserWebSocketRoutes } from './websocket/browser-ws.js';
 
 export type ApiServer = Awaited<ReturnType<typeof buildApiServer>>;
 
 /**
- * Builds the Fastify application with authentication and authorization hooks.
+ * Builds the Fastify application with authentication, machine gateway, and WebSockets.
  * Exported for integration tests — production entry uses startApiServer().
  */
 export async function buildApiServer(env: ApiEnv) {
   const { db, sql } = createDatabase(env.DATABASE_URL);
   const jwtVerifier = new JwtVerifier(env);
   const supabaseAdmin = createSupabaseAdminClient(env);
+
+  const eventBus = new MachineEventBus();
+  const gateway = new DefaultMachineGateway(eventBus, env.MACHINE_HEARTBEAT_TIMEOUT_MS);
+  const machineService = new MachineService(db, gateway, env.MACHINE_CONTROL_LOCK_TTL_MS);
+  const commandService = new MachineCommandService(
+    db,
+    gateway,
+    env.MACHINE_COMMAND_TTL_MS,
+    env.MACHINE_COMMAND_ACK_TIMEOUT_MS,
+  );
 
   const app = Fastify({
     logger: {
@@ -47,6 +64,9 @@ export async function buildApiServer(env: ApiEnv) {
   registerHealthRoutes(app);
   registerAuthRoutes(app, { db, supabaseAdmin });
 
+  await registerMachineWebSocketRoutes(app, { db, gateway });
+  registerBrowserWebSocketRoutes(app, { db, jwtVerifier, eventBus });
+
   // Authorization hooks on nested plugins MUST be async — sync onRequest hooks in
   // encapsulated child plugins do not signal completion and authenticated inject() hangs.
   await app.register(async (protectedApi) => {
@@ -56,6 +76,7 @@ export async function buildApiServer(env: ApiEnv) {
       playerRoutes.addHook('onRequest', requireAuthenticationHook);
       playerRoutes.addHook('onRequest', requirePlayerHook);
       registerProfileRoutes(playerRoutes, { db });
+      registerMachineRoutes(playerRoutes, { db, machineService, commandService });
     });
 
     await protectedApi.register((adminRoutes) => {
@@ -71,7 +92,19 @@ export async function buildApiServer(env: ApiEnv) {
 
   await app.ready();
 
-  return { app, db, sql, jwtVerifier, supabaseAdmin, authenticate, authenticateOptional };
+  return {
+    app,
+    db,
+    sql,
+    jwtVerifier,
+    supabaseAdmin,
+    authenticate,
+    authenticateOptional,
+    gateway,
+    eventBus,
+    machineService,
+    commandService,
+  };
 }
 
 export async function startApiServer(env: ApiEnv): Promise<ApiServer> {

@@ -13,6 +13,11 @@ export function createTestApiEnv(overrides: Partial<ApiEnv> = {}): ApiEnv {
     SUPABASE_URL: 'https://test-project.supabase.co',
     SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key-not-real',
     SUPABASE_JWT_SECRET: 'test-jwt-secret-for-vitest-only-32chars',
+    MACHINE_COMMAND_TTL_MS: 30_000,
+    MACHINE_CONTROL_LOCK_TTL_MS: 1_800_000,
+    MACHINE_HEARTBEAT_INTERVAL_MS: 5_000,
+    MACHINE_HEARTBEAT_TIMEOUT_MS: 15_000,
+    MACHINE_COMMAND_ACK_TIMEOUT_MS: 10_000,
     ...overrides,
   };
 }

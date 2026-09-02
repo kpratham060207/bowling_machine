@@ -22,6 +22,16 @@ const EnvSchema = z.object({
    * SERVER ONLY — not the anon key.
    */
   SUPABASE_JWT_SECRET: z.string().min(1),
+  /** Default TTL for machine commands before they are rejected as stale. */
+  MACHINE_COMMAND_TTL_MS: z.coerce.number().int().positive().default(30_000),
+  /** Exclusive control lock duration — abandoned locks expire and can be reclaimed. */
+  MACHINE_CONTROL_LOCK_TTL_MS: z.coerce.number().int().positive().default(1_800_000),
+  /** Expected machine heartbeat interval from peer (simulator/ESP32). */
+  MACHINE_HEARTBEAT_INTERVAL_MS: z.coerce.number().int().positive().default(5_000),
+  /** Mark connection degraded/offline when heartbeat missing for this duration. */
+  MACHINE_HEARTBEAT_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
+  /** Wait this long for machine command acknowledgement before failing the API request. */
+  MACHINE_COMMAND_ACK_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
 });
 
 export type ApiEnv = z.infer<typeof EnvSchema>;
