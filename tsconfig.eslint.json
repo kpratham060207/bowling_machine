@@ -1,0 +1,20 @@
+{
+  "extends": "@bowling-machine/config/tsconfig/base",
+  "compilerOptions": {
+    "noEmit": true,
+    "allowJs": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
+  },
+  "include": [
+    "apps/**/*.ts",
+    "apps/**/*.tsx",
+    "packages/**/*.ts",
+    "packages/**/*.tsx",
+    "tests/**/*.ts",
+    "*.config.ts",
+    "eslint.config.js",
+    "packages/config/eslint/**/*.js"
+  ],
+  "exclude": ["**/dist/**", "**/.next/**", "**/node_modules/**", "firmware/**"]
+}

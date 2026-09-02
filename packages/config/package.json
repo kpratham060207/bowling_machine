@@ -1,0 +1,21 @@
+{
+  "name": "@bowling-machine/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared TypeScript, ESLint, and Prettier configuration for the monorepo",
+  "license": "UNLICENSED",
+  "exports": {
+    "./tsconfig/base": "./tsconfig/base.json",
+    "./tsconfig/node": "./tsconfig/node.json",
+    "./tsconfig/nextjs": "./tsconfig/nextjs.json",
+    "./tsconfig/react-library": "./tsconfig/react-library.json",
+    "./eslint/base": "./eslint/base.js",
+    "./prettier": "./prettier/index.json"
+  },
+  "scripts": {
+    "typecheck": "node -e \"console.log('@bowling-machine/config: no TypeScript sources')\"",
+    "lint": "node -e \"console.log('@bowling-machine/config: lint via root')\"",
+    "build": "node -e \"console.log('@bowling-machine/config: no build output')\""
+  }
+}

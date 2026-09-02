@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "files": [],
+  "references": [
+    { "path": "./packages/api-contracts" },
+    { "path": "./packages/shared" },
+    { "path": "./packages/database" },
+    { "path": "./packages/ui" },
+    { "path": "./apps/api" },
+    { "path": "./apps/esp32-simulator" },
+    { "path": "./apps/web" }
+  ]
+}

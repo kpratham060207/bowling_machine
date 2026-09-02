@@ -1,0 +1,164 @@
+# Bowling Machine — Project Architecture Rules
+
+These rules are permanent engineering constraints for the bowling_machine repository.
+All contributors and AI assistants must follow them when designing or implementing code.
+
+## Project Identity
+
+This is a smart AI-enabled cricket bowling machine for solo batting practice.
+Current phase: architecture and documentation foundation (greenfield).
+
+## Core Architectural Boundaries
+
+### Layer Separation (Non-Negotiable)
+
+```
+Browser (Web App) → Backend (API) → Machine Communication Layer → ESP32 Firmware → Hardware
+```
+
+- The **browser MUST NEVER** directly control GPIOs, PWM values, motors, or low-level hardware.
+- The **backend** receives user-level delivery requirements and converts them into validated machine-level parameters.
+- The **ESP32** is the actual machine controller and the **final authority over machine safety**.
+- Safety MUST NOT depend on browser, backend, internet, or cloud services.
+
+### User vs Machine Parameters
+
+- **User-level (UI)**: normalized UI coordinates (`ui_x`, `ui_y`) from tap on perspective pitch image — frontend only
+- **User-level (persisted/API)**: normalized pitch target (`target_x`, `target_y`), speed (km/h), ball_type, ball count, timing — produced by Pitch Coordinate Mapper before API call
+- **Machine-level**: wheel RPM, actuator positions, feeder timing — produced by backend trajectory + machine parameter calculation (calibration-driven)
+- Do NOT hard-code machine parameters, cricket region classifications, or physical constants in the frontend
+- Do NOT assume screen Y maps linearly to pitch distance (perspective visualization)
+- Pitch Coordinate Mapper lives in `packages/shared/pitch-coordinates`; see `docs/frontend/PITCH_VISUALIZATION.md`
+- Physical pitch→machine mapping is calibration-dependent and intentionally deferred until hardware calibration
+
+## Roles
+
+Only two roles exist:
+
+| Role   | Scope |
+|--------|-------|
+| PLAYER | Account, profile, machine connection, deliveries, sessions, history, analytics, manual controls, calibration tools, machine status |
+| ADMIN  | System-level administrative tasks |
+
+Do NOT introduce Coach, Trainer, Operator, Organization, or other roles without an ADR.
+
+## Technology Baseline
+
+Unless an ADR justifies a change:
+
+| Layer      | Stack |
+|------------|-------|
+| Frontend   | Next.js, React, TypeScript, Tailwind CSS, shadcn/ui, TanStack Query, React Hook Form, Zod |
+| Backend    | Node.js, Fastify, TypeScript, Zod, WebSocket |
+| Database   | PostgreSQL, Drizzle ORM |
+| Auth       | Supabase Auth |
+| Embedded   | ESP32, ESP-IDF, C/C++ |
+| Dev        | pnpm, Git, GitHub, Docker Compose where useful |
+| Testing    | Vitest, Playwright |
+| Future AI  | Python, PyTorch, YOLO, OpenCV, MediaPipe |
+
+## Infrastructure Constraints
+
+Prefer a **modular monolith** initially. Do NOT introduce without ADR justification:
+
+- Kubernetes
+- Kafka
+- Redis (unless genuinely required)
+- Unnecessary microservices
+- Paid GPU infrastructure
+- Mandatory Raspberry Pi
+- Expensive infrastructure
+
+Support local Wi-Fi, intermittent/no internet, phone browser, reliable local communication.
+
+## Repository Structure
+
+```
+apps/
+  web/                  # Next.js mobile-first web application
+  api/                  # Fastify backend
+  esp32-simulator/      # Machine simulator for development
+
+packages/
+  api-contracts/      # Shared API types and Zod schemas
+  shared/               # Shared utilities, pitch-coordinate transformation layer
+  database/             # Drizzle schema and migrations
+  config/               # Shared ESLint, TypeScript, Tailwind configs
+  ui/                   # Shared shadcn/ui components
+
+firmware/
+  esp32/                # ESP-IDF firmware
+
+docs/                   # Architecture and engineering documentation
+scripts/                # Build, deploy, and utility scripts
+tests/                  # Cross-cutting integration and E2E tests
+```
+
+## Machine States
+
+Explicit states: OFF, INITIALIZING, HOMING, READY, POSITIONING, SPINNING_UP, READY_TO_THROW, FEEDING, WAITING, STOPPING, ERROR, EMERGENCY_STOP.
+
+State ownership: ESP32 is authoritative for machine state. Backend and frontend reflect state; they do not override it.
+
+## Ball Types (Extensible Enum)
+
+Initial values: FAST, MEDIUM, SLOW, BOUNCER, YORKER, FULL, INSWING, OUTSWING, LEG_SPIN, OFF_SPIN.
+
+Design for future extension via database enum or lookup table — not hard-coded frontend-only lists.
+
+## Code Comment Standards
+
+Future code MUST use verbose, meaningful comments explaining **why**, not obvious syntax.
+
+For machine/physics/control code, comments MUST include where applicable:
+
+- Units
+- Physical meaning
+- Assumptions
+- Valid ranges
+- Safety implications
+- Calibration dependencies
+
+Bad: `// increment i`
+Good: `// Clamp wheel RPM to calibrated maximum; exceeding this risks wheel structural failure`
+
+## Security Rules
+
+- NEVER commit passwords, API keys, private tokens, service-role keys, database credentials, or machine secrets.
+- Use environment variables (see `.env.example`).
+- Validate ALL external input with Zod (or equivalent).
+- Treat network commands to the ESP32 as **untrusted input**.
+
+## Documentation Rules
+
+- Documentation is a first-class deliverable.
+- Documentation MUST match actual implementation status — do not claim features are implemented when they are not.
+- Unresolved decisions MUST be documented in `docs/architecture/UNRESOLVED_DECISIONS.md`, not silently decided.
+- Do not claim physical safety validation or hardware testing until actually performed.
+
+## Git Commit Format
+
+```
+type(scope): description
+```
+
+Examples:
+- `docs(architecture): establish system architecture`
+- `feat(api): add delivery validation endpoint`
+- `fix(firmware): clamp actuator position to limit switch range`
+
+## Implementation Status Awareness
+
+When writing code or docs, always distinguish:
+
+- **Designed** — documented but not built
+- **In Progress** — partially implemented
+- **Implemented** — working in codebase
+- **Verified** — tested on hardware or in production-like environment
+
+Currently (Phase 1A): monorepo foundation is **Implemented**; application features remain **Designed**.
+
+## ADR Requirement
+
+Important architectural decisions require an Architecture Decision Record in `docs/decisions/`.
+See existing ADRs before proposing stack or pattern changes.

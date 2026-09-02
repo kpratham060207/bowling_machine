@@ -1,0 +1,30 @@
+{
+  "name": "@bowling-machine/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Next.js mobile-first web application — Phase 1B+",
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@bowling-machine/api-contracts": "workspace:*",
+    "@bowling-machine/shared": "workspace:*",
+    "@bowling-machine/ui": "workspace:*",
+    "next": "^15.1.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@bowling-machine/config": "workspace:*",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "typescript": "^5.7.2"
+  }
+}

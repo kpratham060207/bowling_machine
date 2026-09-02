@@ -1,0 +1,7 @@
+# Placeholder for the cricket-pitch reference image (perspective view).
+
+The Throw Ball UI visualization is based on this asset.
+See docs/frontend/PITCH_VISUALIZATION.md for coordinate architecture.
+
+Expected filename: cricket-pitch-reference.webp (or .png)
+Status: NOT YET SUPPLIED — add the reference image here before UI implementation.

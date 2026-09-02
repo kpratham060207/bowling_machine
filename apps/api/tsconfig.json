@@ -1,0 +1,13 @@
+{
+  "extends": "@bowling-machine/config/tsconfig/node",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../../packages/api-contracts" },
+    { "path": "../../packages/database" },
+    { "path": "../../packages/shared" }
+  ]
+}

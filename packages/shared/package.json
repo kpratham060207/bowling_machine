@@ -1,0 +1,25 @@
+{
+  "name": "@bowling-machine/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Domain-independent shared utilities and types — Phase 1B+",
+  "license": "UNLICENSED",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
+    "dev": "tsc -p tsconfig.json --watch"
+  },
+  "devDependencies": {
+    "@bowling-machine/config": "workspace:*",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

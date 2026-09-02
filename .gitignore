@@ -1,0 +1,43 @@
+# Environment and secrets — never commit credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+
+# IDE and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ESP-IDF / firmware build artifacts
+firmware/esp32/build/
+firmware/esp32/sdkconfig.old
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Test artifacts
+playwright-report/
+test-results/
+.vitest/
+
+# Docker local data (if bind-mounted in future)
+.postgres-data/

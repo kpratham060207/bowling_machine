@@ -1,0 +1,45 @@
+{
+  "name": "bowling-machine",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Smart AI-enabled cricket bowling machine — monorepo root",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "pnpm -r --parallel --filter @bowling-machine/web --filter @bowling-machine/api --filter @bowling-machine/esp32-simulator dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm --filter './packages/*' build && pnpm -r typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm --filter './packages/*' build && vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
+    "clean": "pnpm -r exec rm -rf dist .next out coverage"
+  },
+  "devDependencies": {
+    "@bowling-machine/api-contracts": "workspace:*",
+    "@bowling-machine/config": "workspace:*",
+    "@bowling-machine/database": "workspace:*",
+    "@bowling-machine/shared": "workspace:*",
+    "@bowling-machine/ui": "workspace:*",
+    "@eslint/js": "^9.17.0",
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.2",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.2",
+    "vitest": "^2.1.8"
+  }
+}
