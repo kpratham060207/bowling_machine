@@ -1,6 +1,6 @@
 # Frontend Architecture
 
-> **Status:** Phase 1H-A player foundation implemented; pitch UI in Phase 1H-B
+> **Status:** Phase 1H-B interactive pitch implemented; see `PHASE_1H-B.md`
 > **Last updated:** 2026-09-02 (finalized pitch-selection UX)
 
 ## Overview
