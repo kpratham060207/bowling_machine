@@ -47,23 +47,29 @@ export async function buildApiServer(env: ApiEnv) {
   registerHealthRoutes(app);
   registerAuthRoutes(app, { db, supabaseAdmin });
 
-  app.register((protectedApi) => {
+  // Authorization hooks on nested plugins MUST be async — sync onRequest hooks in
+  // encapsulated child plugins do not signal completion and authenticated inject() hangs.
+  await app.register(async (protectedApi) => {
     protectedApi.addHook('onRequest', authenticate);
 
-    protectedApi.register((playerRoutes) => {
+    await protectedApi.register((playerRoutes) => {
       playerRoutes.addHook('onRequest', requireAuthenticationHook);
       playerRoutes.addHook('onRequest', requirePlayerHook);
       registerProfileRoutes(playerRoutes, { db });
     });
 
-    protectedApi.register((adminRoutes) => {
+    await protectedApi.register((adminRoutes) => {
       adminRoutes.addHook('onRequest', requireAuthenticationHook);
       adminRoutes.addHook('onRequest', requireAdminHook);
       registerAdminRoutes(adminRoutes);
     });
   });
 
-  app.addHook('onClose', () => sql.end());
+  app.addHook('onClose', async () => {
+    await sql.end();
+  });
+
+  await app.ready();
 
   return { app, db, sql, jwtVerifier, supabaseAdmin, authenticate, authenticateOptional };
 }

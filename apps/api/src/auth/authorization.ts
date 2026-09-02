@@ -42,17 +42,23 @@ export function rejectClientOwnershipFields(body: Record<string, unknown>): void
   }
 }
 
-/** Fastify onRequest hook adapter for requireAuthentication. */
-export function requireAuthenticationHook(request: FastifyRequest): void {
+/**
+ * Fastify onRequest hook — returns a Promise so nested encapsulated plugins signal
+ * completion. Sync hooks in child plugins cause authenticated inject() to hang indefinitely.
+ */
+export function requireAuthenticationHook(request: FastifyRequest): Promise<void> {
   requireAuthentication(request);
+  return Promise.resolve();
 }
 
-/** Fastify onRequest hook adapter for requirePlayer. */
-export function requirePlayerHook(request: FastifyRequest): void {
+/** See requireAuthenticationHook — Promise return required for Fastify nested hooks. */
+export function requirePlayerHook(request: FastifyRequest): Promise<void> {
   requirePlayer(request);
+  return Promise.resolve();
 }
 
-/** Fastify onRequest hook adapter for requireAdmin. */
-export function requireAdminHook(request: FastifyRequest): void {
+/** See requireAuthenticationHook — Promise return required for Fastify nested hooks. */
+export function requireAdminHook(request: FastifyRequest): Promise<void> {
   requireAdmin(request);
+  return Promise.resolve();
 }

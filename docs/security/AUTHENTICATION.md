@@ -111,6 +111,19 @@ Security events written to `audit_logs`:
 
 Tokens, passwords, and secrets are never logged.
 
+## Automated test authentication
+
+Production verifies Supabase-issued JWTs via `SUPABASE_JWT_SECRET` (HS256), with JWKS
+fallback only outside test mode.
+
+Integration tests use `signTestAccessToken()` in `apps/api/src/test/test-helpers.ts`:
+
+- Signs HS256 tokens with a fixed test secret (never committed as a real Supabase key)
+- Uses the same issuer/audience shape as production
+- Does not contact Supabase Auth or remote JWKS (`NODE_ENV=test` disables JWKS fallback)
+
+This keeps authorization and IDOR behavior testable locally without a Supabase project.
+
 ## Related documents
 
 - [Player Account Architecture](../architecture/PLAYER_ACCOUNT_ARCHITECTURE.md)

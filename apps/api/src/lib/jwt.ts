@@ -27,6 +27,9 @@ export class JwtVerifier {
   /**
    * Validates Bearer token signature and standard Supabase claims.
    * Tries HS256 (JWT secret) first, then JWKS for asymmetric project configs.
+   *
+   * In test mode, JWKS fallback is disabled — integration tests must not depend on
+   * external Supabase network calls; failures surface as explicit auth errors instead.
    */
   async verifyAccessToken(token: string): Promise<VerifiedSupabaseJwt> {
     try {
@@ -39,6 +42,10 @@ export class JwtVerifier {
       }
       return payload as VerifiedSupabaseJwt;
     } catch (secretError) {
+      if (this.env.NODE_ENV === 'test') {
+        throw secretError;
+      }
+
       const message = secretError instanceof Error ? secretError.message : String(secretError);
       const isSignatureIssue =
         message.includes('signature') || message.includes('alg') || message.includes('Unsupported');

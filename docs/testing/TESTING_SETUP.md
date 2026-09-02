@@ -1,6 +1,6 @@
 # Testing Setup
 
-> **Phase:** 1A foundation — tooling configured; feature tests deferred.
+> **Phase:** 1D — auth integration tests require PostgreSQL (Docker).
 
 ## Tools
 
@@ -31,12 +31,33 @@ CI runs format check, typecheck, lint, build, unit tests, and Playwright smoke t
 
 ## Current tests
 
-| File                            | Purpose                                    |
-| ------------------------------- | ------------------------------------------ |
-| `tests/smoke/workspace.test.ts` | Verifies workspace package exports resolve |
-| `tests/e2e/smoke.spec.ts`       | Verifies Playwright runner works           |
+| File                                           | Purpose                                                       |
+| ---------------------------------------------- | ------------------------------------------------------------- |
+| `tests/smoke/workspace.test.ts`                | Workspace package exports                                     |
+| `packages/api-contracts/src/contracts.test.ts` | Shared Zod contracts                                          |
+| `packages/database/src/database.test.ts`       | PostgreSQL persistence (requires Docker)                      |
+| `apps/api/src/auth.integration.test.ts`        | Auth middleware, IDOR, profile/admin routes (requires Docker) |
+| `apps/api/src/auth/authorization.test.ts`      | Authorization helper unit tests                               |
+| `apps/api/src/lib/jwt.test.ts`                 | JWT verification unit tests                                   |
+| `tests/e2e/smoke.spec.ts`                      | Playwright runner smoke                                       |
 
-No feature tests exist yet — by design for Phase 1A.
+### Backend auth integration tests
+
+Authentication integration tests use **deterministic local JWTs** signed with a test-only
+`SUPABASE_JWT_SECRET` (see `apps/api/src/test/test-helpers.ts`). They do **not** call
+Supabase Auth or remote JWKS endpoints.
+
+Requirements:
+
+```bash
+pnpm db:up
+pnpm db:migrate
+pnpm test
+```
+
+Each test builds a Fastify app via `buildApiServer()`, which awaits nested plugin
+registration and `app.ready()` before handling requests. Tests must `await app.close()`
+to release the per-server database pool.
 
 ## Adding tests (future)
 
