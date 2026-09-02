@@ -11,13 +11,17 @@ import {
 import { ActuatorPositionsSchema, WheelRpmSchema } from './quantities.js';
 import { MachineStateSchema } from './state.js';
 /**
- * IMU orientation — unit: degrees.
- * Represents machine orientation feedback; calibration-dependent accuracy.
+ * IMU orientation axes (pitch, roll, yaw).
+ *
+ * Physical unit UNRESOLVED — architecture identifies these axes but does not finalize
+ * the hardware representation. Values are numeric only. Firmware may provisionally
+ * use degrees, but this contract does NOT lock in a permanent unit; a future protocol
+ * revision may add an explicit unit field once hardware specification is complete.
  */
 export const ImuOrientationSchema = z.object({
-  pitch: z.number().describe('Pitch in degrees'),
-  roll: z.number().describe('Roll in degrees'),
-  yaw: z.number().describe('Yaw in degrees'),
+  pitch: z.number().describe('IMU pitch axis — unit UNRESOLVED (provisional numeric)'),
+  roll: z.number().describe('IMU roll axis — unit UNRESOLVED (provisional numeric)'),
+  yaw: z.number().describe('IMU yaw axis — unit UNRESOLVED (provisional numeric)'),
 });
 
 /** Live machine status snapshot — combines state, targets, and actuals. */

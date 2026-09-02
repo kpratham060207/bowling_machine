@@ -5,7 +5,8 @@ import { z } from 'zod';
  * Units documented explicitly; unresolved units reference UD-02.
  */
 
-/** Wheel RPM — unit: revolutions per minute. */
+/** Wheel RPM — unit: revolutions per minute (numeric type only).
+ *  Non-negative is structural; achievable max RPM is machine/safety validation (UD-03). */
 export const WheelRpmSchema = z
   .number()
   .nonnegative('RPM cannot be negative')

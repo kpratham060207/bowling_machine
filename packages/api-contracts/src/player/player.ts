@@ -21,8 +21,8 @@ export const PlayerPreferencesSchema = z
  * Does NOT include passwords, tokens, or Supabase credentials.
  * Auth identity is linked via `id` (matches Supabase user UUID in persistence layer).
  *
- * Note: Database design (Phase 0) used a single `handedness` field; this contract
- * separates batting_hand and bowling_hand per application requirements.
+ * Note: Phase 0 database design used a single `handedness` column. Phase 1C MUST
+ * align persistence with `batting_hand` and `bowling_hand` — no `handedness` alias.
  */
 export const PlayerSchema = z.object({
   id: EntityIdSchema.describe('Application player ID (matches auth user UUID)'),
@@ -39,7 +39,6 @@ export const PlayerSchema = z.object({
     .describe('Self-assessed skill level — unconstrained until taxonomy defined'),
   practice_goals: z
     .array(z.string().max(200))
-    .max(20)
     .optional()
     .describe('Player-defined practice goals (free text)'),
   preferences: PlayerPreferencesSchema.optional(),

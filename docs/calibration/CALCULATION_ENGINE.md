@@ -18,15 +18,15 @@ Inputs are assumed to already be in the interactive pitch coordinate system (`ta
 
 ## Input: User Delivery Request
 
-| Parameter           | Type    | Range          | Example |
-| ------------------- | ------- | -------------- | ------- |
-| target_x            | decimal | 0.0–1.0        | 0.62    |
-| target_y            | decimal | 0.0–1.0        | 0.73    |
-| desired_speed_kmh   | decimal | > 0            | 120.0   |
-| ball_type           | enum    | See ball types | FAST    |
-| number_of_balls     | integer | 1–50           | 6       |
-| first_ball_delay_ms | integer | >= 0           | 3000    |
-| interval_ms         | integer | >= 1000        | 8000    |
+| Parameter           | Type    | Structural constraint                     | Example |
+| ------------------- | ------- | ----------------------------------------- | ------- |
+| target_x            | decimal | 0.0–1.0                                   | 0.62    |
+| target_y            | decimal | 0.0–1.0                                   | 0.73    |
+| desired_speed_kmh   | decimal | > 0 (not safe/achievable until validated) | 120.0   |
+| ball_type           | enum    | See ball types                            | FAST    |
+| number_of_balls     | integer | >= 1                                      | 6       |
+| first_ball_delay_ms | integer | >= 0                                      | 3000    |
+| interval_ms         | integer | >= 0 (min safe value: machine validation) | 8000    |
 
 ### Normalized Pitch Target Coordinates (`target_x`, `target_y`)
 

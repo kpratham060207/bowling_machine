@@ -18,9 +18,3 @@ export const BallTypeSchema = z.enum([
 ]);
 
 export type BallType = z.infer<typeof BallTypeSchema>;
-
-/** Maximum balls per delivery request — structural limit, not a physics constant. */
-export const MAX_BALLS_PER_DELIVERY = 50;
-
-/** Minimum interval between balls in a sequence — milliseconds. */
-export const MIN_INTERVAL_MS = 1000;

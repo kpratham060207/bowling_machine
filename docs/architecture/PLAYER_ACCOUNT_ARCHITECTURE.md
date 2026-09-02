@@ -99,9 +99,12 @@ Stored in `profiles` table (see [Database Design](../database/DATABASE_DESIGN.md
 | Field        | Required | Notes                                                  |
 | ------------ | -------- | ------------------------------------------------------ |
 | display_name | Yes      | Shown in UI                                            |
-| handedness   | No       | RIGHT or LEFT                                          |
+| batting_hand | No       | `RIGHT`, `LEFT`, `AMBIDEXTROUS`, `UNSPECIFIED`         |
+| bowling_hand | No       | `RIGHT`, `LEFT`, `AMBIDEXTROUS`, `UNSPECIFIED`         |
 | skill_level  | No       | Self-assessment                                        |
 | preferences  | No       | JSONB: default speed, favorite ball types, UI settings |
+
+> **Phase 1C:** Database `profiles` table MUST use `batting_hand` and `bowling_hand` columns aligned with `PlayerSchema`. The earlier single `handedness` field is superseded — no alias.
 
 Profile data is personal and not shared between users.
 

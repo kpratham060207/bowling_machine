@@ -176,9 +176,21 @@ describe('DeliveryRequestSchema', () => {
     ).toBe(false);
   });
 
-  it('rejects interval below minimum', () => {
+  it('does not enforce unfinalized max ball count (machine validation responsibility)', () => {
     expect(
-      DeliveryRequestSchema.safeParse({ ...validDeliveryRequest, interval_ms: 500 }).success,
+      DeliveryRequestSchema.safeParse({ ...validDeliveryRequest, number_of_balls: 100 }).success,
+    ).toBe(true);
+  });
+
+  it('does not enforce unfinalized minimum interval (machine validation responsibility)', () => {
+    expect(
+      DeliveryRequestSchema.safeParse({ ...validDeliveryRequest, interval_ms: 100 }).success,
+    ).toBe(true);
+  });
+
+  it('rejects negative interval', () => {
+    expect(
+      DeliveryRequestSchema.safeParse({ ...validDeliveryRequest, interval_ms: -1 }).success,
     ).toBe(false);
   });
 
@@ -186,6 +198,12 @@ describe('DeliveryRequestSchema', () => {
     expect(
       DeliveryRequestSchema.safeParse({ ...validDeliveryRequest, desired_speed_kmh: 0 }).success,
     ).toBe(false);
+  });
+
+  it('accepts high speed without shared contract max (safety validation is downstream)', () => {
+    expect(
+      DeliveryRequestSchema.safeParse({ ...validDeliveryRequest, desired_speed_kmh: 999 }).success,
+    ).toBe(true);
   });
 });
 

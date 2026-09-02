@@ -10,17 +10,21 @@ Defines the communication protocol between the backend (Machine Gateway) and the
 
 ## Domain contracts vs wire format
 
-Phase 1B defines **transport-independent domain objects** in `packages/api-contracts`. The Machine Gateway maps between wire envelopes (below) and these schemas:
+Phase 1B defines **transport-independent domain objects** in `packages/api-contracts`. Domain commands (e.g. `THROW_SEQUENCE`, `STOP`) are not coupled to WebSocket or HTTP transport.
 
-| Wire `type` (legacy doc) | Domain `command_type` / object | Zod schema                     |
-| ------------------------ | ------------------------------ | ------------------------------ |
-| `command.execute`        | `THROW_SEQUENCE`               | `MachineCommandSchema`         |
-| `command.stop`           | `STOP`                         | `MachineCommandSchema`         |
-| `command.home`           | `HOME`                         | `MachineCommandSchema`         |
-| `config.update`          | `SET_CONFIGURATION`            | `MachineCommandSchema`         |
-| `command.ack`            | —                              | `CommandAcknowledgementSchema` |
-| `telemetry.status`       | —                              | `TelemetrySampleSchema`        |
-| `heartbeat`              | —                              | `MachineHeartbeatSchema`       |
+The **final wire representation** (message `type` strings, envelope fields) will be finalized during Machine Gateway implementation. The table below shows a **provisional** mapping from early design docs — not a locked protocol specification:
+
+| Wire `type` (provisional) | Domain `command_type` / object | Zod schema                     |
+| ------------------------- | ------------------------------ | ------------------------------ |
+| `command.execute`         | `THROW_SEQUENCE`               | `MachineCommandSchema`         |
+| `command.stop`            | `STOP`                         | `MachineCommandSchema`         |
+| `command.home`            | `HOME`                         | `MachineCommandSchema`         |
+| `config.update`           | `SET_CONFIGURATION`            | `MachineCommandSchema`         |
+| `command.ack`             | —                              | `CommandAcknowledgementSchema` |
+| `telemetry.status`        | —                              | `TelemetrySampleSchema`        |
+| `heartbeat`               | —                              | `MachineHeartbeatSchema`       |
+
+The gateway MUST preserve the ability to map domain commands to wire messages without changing domain schema semantics.
 
 Domain command example (`THROW_SEQUENCE`):
 

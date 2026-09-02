@@ -51,14 +51,14 @@ Managed primarily by Supabase Auth. Local table mirrors essential fields.
 
 Player-specific profile data.
 
-| Column       | Type            | Notes                      |
-| ------------ | --------------- | -------------------------- |
-| id           | UUID PK         |                            |
-| user_id      | UUID FK → users | UNIQUE                     |
-| display_name | VARCHAR(100)    |                            |
-| handedness   | VARCHAR(10)     | `RIGHT`, `LEFT` (optional) |
+| Column       | Type            | Notes                                                                                                     |
+| ------------ | --------------- | --------------------------------------------------------------------------------------------------------- |
+| id           | UUID PK         |                                                                                                           |
+| user_id      | UUID FK → users | UNIQUE                                                                                                    |
+| display_name | VARCHAR(100)    |                                                                                                           |
+| handedness   | VARCHAR(10)     | `RIGHT`, `LEFT` (optional) — **deprecated; Phase 1C MUST replace with `batting_hand` and `bowling_hand`** |
 
-> **Phase 1B note:** The application `PlayerSchema` in `packages/api-contracts` uses separate `batting_hand` and `bowling_hand` fields (`RIGHT`, `LEFT`, `AMBIDEXTROUS`, `UNSPECIFIED`). Database persistence will map these fields in Phase 1C+ — the single `handedness` column above may be split or migrated.
+> **Phase 1C requirement:** The application `PlayerSchema` uses `batting_hand` and `bowling_hand` (`RIGHT`, `LEFT`, `AMBIDEXTROUS`, `UNSPECIFIED`). Database persistence MUST align with this model in Phase 1C. Do not add a `handedness` compatibility alias unless genuinely required.
 > | skill_level | VARCHAR(20) | Optional self-assessment |
 > | preferences | JSONB | UI preferences, defaults |
 > | created_at | TIMESTAMPTZ | |

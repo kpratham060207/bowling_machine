@@ -25,9 +25,17 @@ export const MachineDeliveryParametersSchema = z.object({
     .nonnegative()
     .nullable()
     .describe('Delay before feed after wheels at speed — ms; null until calibrated'),
-  ball_count: z.number().int().min(1),
+  ball_count: z
+    .number()
+    .int()
+    .min(1)
+    .describe('Ball count — minimum 1 is structural; max is machine validation'),
   first_ball_delay_ms: z.number().int().nonnegative(),
-  interval_ms: z.number().int().min(1000),
+  interval_ms: z
+    .number()
+    .int()
+    .nonnegative()
+    .describe('Inter-ball delay ms — min safe value enforced by machine/safety layers'),
 });
 
 export type MachineDeliveryParameters = z.infer<typeof MachineDeliveryParametersSchema>;

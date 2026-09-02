@@ -244,6 +244,18 @@ The exact transformation from the **pitch coordinate system** to the **machine's
 
 ---
 
+### UD-12a: IMU Angle Units
+
+**Question:** What physical unit do IMU pitch/roll/yaw values use (degrees, radians, raw sensor counts)?
+
+**Context:** Architecture identifies pitch/roll/yaw axes but does not finalize the hardware representation. Phase 1B contracts store numeric values only with unit marked UNRESOLVED. Firmware may provisionally use degrees, but this is replaceable once hardware specification is complete.
+
+**Impact:** ESP32 firmware, telemetry parsing, calibration.
+
+**Status:** UNRESOLVED
+
+---
+
 ### UD-13: Command Buffering on ESP32
 
 **Question:** Should the ESP32 buffer multiple commands locally for offline operation?

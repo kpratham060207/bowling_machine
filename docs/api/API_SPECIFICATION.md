@@ -23,7 +23,36 @@ REST API served by the Fastify backend. All request/response bodies are JSON. Al
 
 HTTP route handlers are **not** implemented until a later phase.
 
-## Authentication
+## Validation layers
+
+Shared contracts (`packages/api-contracts`) enforce **structural validation** only. Downstream layers handle capability and safety — none of which are implemented yet.
+
+```
+User request
+    │
+    ▼
+Structural validation          ← packages/api-contracts (Zod schemas)
+    │
+    ▼
+Machine capability validation  ← machine configuration / calibration (NOT implemented)
+    │
+    ▼
+Calculation                    ← calculation engine (NOT implemented)
+    │
+    ▼
+Machine safety validation      ← backend safety rules (NOT implemented)
+    │
+    ▼
+ESP32 final safety validation  ← firmware authority (NOT implemented)
+```
+
+| Layer                          | Responsibility                                                                                                       | Implemented             |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| **Structural validation**      | Types, required fields, enum values, normalized coordinate domain (0–1), positive numeric speed, non-negative timing | Phase 1B contracts      |
+| **Machine/system validation**  | Max balls per session, min inter-ball interval, achievable speed/RPM ranges, calibrated parameter bounds             | Phase 1C+ / calibration |
+| **Physical safety validation** | Hard limits, E-stop, stale command rejection, firmware range checks                                                  | ESP32 firmware (future) |
+
+**Important:** A structurally valid `desired_speed_kmh > 0` does **not** mean the speed is physically safe or achievable. Product limits (e.g. max balls, min interval) are **not** encoded in shared contracts unless explicitly established by architecture.
 
 All endpoints except health check and auth endpoints require:
 
@@ -148,15 +177,15 @@ Optional fields for display replay (not used by calculation engine):
 }
 ```
 
-Validation rules:
+Validation rules (structural — shared contract only):
 
 - `target_x`, `target_y`: 0.0–1.0 (**normalized pitch target** in interactive pitch coordinate system — produced by Pitch Coordinate Mapper, not raw tap position)
 - `ui.ui_x`, `ui.ui_y`: 0.0–1.0 (optional; normalized UI coordinates for marker replay on visualization)
-- `desired_speed_kmh`: > 0, upper limit TBD by calibration
+- `desired_speed_kmh`: > 0 (structural only — safe/achievable range validated by machine config, calibration, and safety layers)
 - `ball_type`: enum value
-- `number_of_balls`: 1–50 (configurable max)
+- `number_of_balls`: integer >= 1 (structural minimum; max count is machine/system validation)
 - `first_ball_delay_ms`: >= 0
-- `interval_ms`: >= 1000 (minimum 1 second between balls)
+- `interval_ms`: >= 0 (min safe interval is machine/system validation, not shared contract)
 
 Response:
 
