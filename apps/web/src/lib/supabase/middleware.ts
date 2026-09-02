@@ -33,7 +33,18 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   });
 
   // Refresh session if expired — required for Server Components to see valid auth.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { pathname } = request.nextUrl;
+  if (!user && pathname.startsWith('/app')) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = '/login';
+    loginUrl.search = '';
+    loginUrl.searchParams.set('next', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
 
   return supabaseResponse;
 }

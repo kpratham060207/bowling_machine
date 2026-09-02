@@ -37,6 +37,44 @@ The Supabase Auth UUID **is** the application user ID. No second player UUID is 
 
 Login and logout use the Supabase browser client. Session restoration happens automatically via cookie refresh in middleware.
 
+## Sign-in methods
+
+| Method         | Flow                                                                                                        |
+| -------------- | ----------------------------------------------------------------------------------------------------------- |
+| Email/password | `signInWithPassword` on `/login` → cookie session                                                           |
+| Google OAuth   | `signInWithOAuth({ provider: 'google' })` → Google → `/auth/callback` → PKCE code exchange → cookie session |
+
+Both methods produce the same Supabase session. The backend verifies JWTs identically — it does not distinguish login provider.
+
+### Google OAuth (PKCE)
+
+1. Player clicks **Continue with Google** on `/login`
+2. Browser redirects to Google consent (via Supabase)
+3. Google redirects to Supabase, then to `{NEXT_PUBLIC_APP_URL}/auth/callback?code=…&next=…`
+4. Route handler calls `exchangeCodeForSession(code)` — session stored in HTTP-only cookies
+5. User redirected to safe internal `next` path (default `/app`)
+
+**Redirect safety:** `next` must be a relative path starting with `/`. Absolute URLs and protocol-relative paths are rejected.
+
+**Return path:** Visiting a protected route (e.g. `/app/practice`) while logged out redirects to `/login?next=/app/practice`. After Google or email login, the user returns to that path.
+
+### Google provider setup (Supabase dashboard — not committed)
+
+1. Supabase → **Authentication** → **Providers** → **Google** → Enable
+2. Google Cloud Console → **APIs & Services** → **Credentials** → Create **OAuth 2.0 Client ID** (Web application)
+3. Copy **Client ID** and **Client Secret** into Supabase Google provider settings
+4. **Authorized JavaScript origins** (add each dev port you use):
+   - `http://localhost:3000`
+   - `http://localhost:3004` (or whichever port Next.js selects)
+   - Set `NEXT_PUBLIC_APP_URL` in `.env` to match
+5. **Authorized redirect URIs** — use your project's Supabase callback URL from the Supabase Google provider page, typically:
+   - `https://<project-ref>.supabase.co/auth/v1/callback`
+6. Supabase → **Authentication** → **URL Configuration**:
+   - **Site URL**: `http://localhost:3000` (or your `NEXT_PUBLIC_APP_URL` for local dev)
+   - **Redirect URLs**: add `{NEXT_PUBLIC_APP_URL}/auth/callback` for each local port (e.g. `http://localhost:3004/auth/callback`)
+
+Never commit Google Client Secret or Supabase service-role key.
+
 ## Browser WebSocket authentication (Phase 1E)
 
 Browser real-time events use `/ws/browser`. **JWT query parameters are rejected** — they leak via server logs, proxies, and browser history.
@@ -78,7 +116,7 @@ On any authenticated API request, if Supabase auth exists but application rows a
 
 ### Missing profile on login
 
-If a user can authenticate with Supabase but has no profile, the safety net creates one with a default display name derived from email.
+If a user can authenticate with Supabase but has no profile, the safety net creates one with a default display name derived from email or OAuth metadata (`full_name` / `name` on first provision only — existing display names are never overwritten on login).
 
 ## Authorization (backend)
 
@@ -108,6 +146,7 @@ See [.env.example](../../.env.example).
 
 | Variable                        | Scope       | Purpose                              |
 | ------------------------------- | ----------- | ------------------------------------ |
+| `NEXT_PUBLIC_APP_URL`           | Browser     | Web app base URL (OAuth redirectTo)  |
 | `NEXT_PUBLIC_SUPABASE_URL`      | Browser     | Supabase project URL                 |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser     | Public anon key                      |
 | `NEXT_PUBLIC_API_URL`           | Browser     | Backend API URL                      |

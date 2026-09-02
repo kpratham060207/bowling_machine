@@ -1,20 +1,26 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { LoginForm } from '@/components/auth-forms';
+import { getAuthErrorMessage } from '@/lib/auth/oauth-errors';
+import { sanitizeAuthRedirectPath } from '@/lib/auth/safe-redirect';
 import { getServerSession } from '@/lib/supabase/server';
 
 type LoginPageProps = {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; error?: string }>;
 };
 
 /** Login page — redirects authenticated users to the player app. */
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await getServerSession();
   const params = await searchParams;
+  const nextPath = sanitizeAuthRedirectPath(params.next);
+  const authError = getAuthErrorMessage(params.error);
 
   if (session) {
-    redirect(params.next ?? '/app');
+    redirect(nextPath);
   }
+
+  const registerHref = params.next ? `/register?next=${encodeURIComponent(nextPath)}` : '/register';
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -28,12 +34,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </div>
 
         <div className="card">
-          <LoginForm nextPath={params.next ?? '/app'} />
+          <LoginForm nextPath={nextPath} initialError={authError} />
         </div>
 
         <p className="text-center text-sm text-slate-600">
           No account?{' '}
-          <Link href="/register" className="font-medium text-pitch-700 hover:underline">
+          <Link href={registerHref} className="font-medium text-pitch-700 hover:underline">
             Create one
           </Link>
         </p>

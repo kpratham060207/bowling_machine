@@ -13,12 +13,18 @@ test.describe('player web foundation', () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test('login page renders sign-in form', async ({ page }) => {
+  test('login page renders sign-in form and Google button', async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
     await expect(page.getByLabel('Email')).toBeVisible();
     await expect(page.getByLabel('Password')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible();
+  });
+
+  test('protected route preserves return path on login redirect', async ({ page }) => {
+    await page.goto('/app/practice');
+    await expect(page).toHaveURL(/\/login\?next=%2Fapp%2Fpractice/);
   });
 
   test('register page renders create account form', async ({ page }) => {

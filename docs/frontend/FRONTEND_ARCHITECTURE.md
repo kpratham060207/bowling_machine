@@ -87,20 +87,20 @@ The UI must gracefully handle:
 
 ## Page Structure (Planned)
 
-| Route                   | Purpose                      | Auth Required |
-| ----------------------- | ---------------------------- | ------------- |
-| `/`                     | Landing / redirect           | No            |
-| `/login`                | Supabase Auth login          | No            |
-| `/register`             | Account creation             | No            |
-| `/connect`              | QR scan / machine connection | Yes (PLAYER)  |
-| `/machine/[id]`         | Machine status dashboard     | Yes (PLAYER)  |
-| `/machine/[id]/throw`   | Delivery configurator        | Yes (PLAYER)  |
-| `/machine/[id]/session` | Active practice session      | Yes (PLAYER)  |
-| `/profile`              | Player profile management    | Yes (PLAYER)  |
-| `/history`              | Practice history             | Yes (PLAYER)  |
-| `/analytics`            | Personal analytics           | Yes (PLAYER)  |
-| `/calibration`          | Calibration tools            | Yes (PLAYER)  |
-| `/admin/*`              | Admin pages                  | Yes (ADMIN)   |
+| Route                   | Purpose                                       | Auth Required |
+| ----------------------- | --------------------------------------------- | ------------- |
+| `/`                     | Landing / redirect                            | No            |
+| `/login`                | Supabase Auth login (email/password + Google) | No            |
+| `/register`             | Account creation                              | No            |
+| `/connect`              | QR scan / machine connection                  | Yes (PLAYER)  |
+| `/machine/[id]`         | Machine status dashboard                      | Yes (PLAYER)  |
+| `/machine/[id]/throw`   | Delivery configurator                         | Yes (PLAYER)  |
+| `/machine/[id]/session` | Active practice session                       | Yes (PLAYER)  |
+| `/profile`              | Player profile management                     | Yes (PLAYER)  |
+| `/history`              | Practice history                              | Yes (PLAYER)  |
+| `/analytics`            | Personal analytics                            | Yes (PLAYER)  |
+| `/calibration`          | Calibration tools                             | Yes (PLAYER)  |
+| `/admin/*`              | Admin pages                                   | Yes (ADMIN)   |
 
 ## Key UI Components (Planned)
 
@@ -184,11 +184,12 @@ All API types imported from `packages/api-contracts` — never duplicated in the
 
 ## Authentication Flow
 
-1. Player registers/logs in via Supabase Auth (email/password initially)
-2. Supabase returns JWT
-3. Frontend stores session via Supabase client
-4. JWT attached to all API requests (Authorization header)
-5. Backend verifies JWT and resolves role (PLAYER/ADMIN)
+1. Player registers via backend provisioning (`/register`) or signs in on `/login`
+2. Sign-in options: **email/password** or **Google OAuth** (both via Supabase Auth)
+3. Google OAuth uses PKCE: `signInWithOAuth` → `/auth/callback` → `exchangeCodeForSession` → SSR cookies
+4. Supabase session stored in HTTP-only cookies (`@supabase/ssr`) — not localStorage
+5. JWT attached to all API requests (`Authorization: Bearer`)
+6. Backend verifies JWT and resolves role from PostgreSQL (`users.role`)
 
 See [Player Account Architecture](../architecture/PLAYER_ACCOUNT_ARCHITECTURE.md).
 

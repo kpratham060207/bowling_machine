@@ -2,7 +2,7 @@ import type { FastifyRequest } from 'fastify';
 import type { Database } from '@bowling-machine/database';
 import type { JwtVerifier } from '../lib/jwt.js';
 import { ApiHttpError } from '../errors/http-errors.js';
-import { loadAuthContextForUser } from './provisioning.js';
+import { loadAuthContextForUser, deriveDisplayNameHint } from './provisioning.js';
 import type { AuthContext } from './types.js';
 
 /**
@@ -46,7 +46,14 @@ export function createAuthenticationHook(deps: {
 
     const email =
       typeof payload.email === 'string' ? payload.email : `${payload.sub}@unknown.local`;
-    const applicationUser = await loadAuthContextForUser(deps.db, payload.sub, email);
+    const userMetadata =
+      payload.user_metadata && typeof payload.user_metadata === 'object'
+        ? (payload.user_metadata as Record<string, unknown>)
+        : null;
+    const displayNameHint = deriveDisplayNameHint(email, userMetadata);
+    const applicationUser = await loadAuthContextForUser(deps.db, payload.sub, email, {
+      displayNameHint,
+    });
 
     const authContext: AuthContext = {
       userId: applicationUser.userId,

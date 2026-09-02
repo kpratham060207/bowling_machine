@@ -30,6 +30,24 @@ async function findProfileByUserId(db: Database['db'], userId: string) {
 }
 
 /**
+ * Derives an initial display name from Supabase Auth user metadata (e.g. Google full_name).
+ * Used only when creating a new profile — never overwrites an existing display name.
+ */
+export function deriveDisplayNameHint(
+  email: string,
+  userMetadata?: Record<string, unknown> | null,
+): string {
+  if (userMetadata && typeof userMetadata === 'object') {
+    const fullName = userMetadata.full_name ?? userMetadata.name;
+    if (typeof fullName === 'string' && fullName.trim().length > 0) {
+      return fullName.trim().slice(0, 100);
+    }
+  }
+
+  return (email.split('@')[0] ?? 'Player').slice(0, 100);
+}
+
+/**
  * Ensures an authenticated Supabase user has corresponding application records.
  *
  * Called on registration (authoritative create) and on authenticated requests (safety net).
@@ -91,25 +109,37 @@ export async function loadAuthContextForUser(
   db: Database['db'],
   userId: string,
   email: string,
+  options?: { displayNameHint?: string },
 ): Promise<ApplicationUserRecord> {
+  const displayName = (options?.displayNameHint?.trim() || deriveDisplayNameHint(email)).slice(
+    0,
+    100,
+  );
+
   const userRow = await findUserById(db, userId);
 
   if (!userRow) {
     return ensureApplicationUser(db, {
       userId,
       email,
-      profile: {
-        displayName: email.split('@')[0] ?? 'Player',
-      },
+      profile: { displayName },
     });
   }
 
   const profileRow = await findProfileByUserId(db, userId);
 
+  if (!profileRow) {
+    return ensureApplicationUser(db, {
+      userId,
+      email: userRow.email,
+      profile: { displayName },
+    });
+  }
+
   return {
     userId: userRow.id,
     email: userRow.email,
     role: userRow.role,
-    profileId: profileRow?.id ?? null,
+    profileId: profileRow.id,
   };
 }
