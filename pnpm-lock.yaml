@@ -56,6 +56,9 @@ importers:
       '@bowling-machine/api-contracts':
         specifier: workspace:*
         version: link:../../packages/api-contracts
+      '@bowling-machine/calculation-engine':
+        specifier: workspace:*
+        version: link:../../packages/calculation-engine
       '@bowling-machine/database':
         specifier: workspace:*
         version: link:../../packages/database

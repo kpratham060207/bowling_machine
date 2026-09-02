@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@bowling-machine/api-contracts": "workspace:*",
+    "@bowling-machine/calculation-engine": "workspace:*",
     "@bowling-machine/database": "workspace:*",
     "@bowling-machine/shared": "workspace:*",
     "@fastify/cors": "^11.3.0",
