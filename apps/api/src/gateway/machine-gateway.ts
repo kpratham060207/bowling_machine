@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import {
   WireCommandDispatchSchema,
   WireInboundMessageSchema,
+  isSupportedProtocolVersion,
   type CommandAcknowledgement,
   type MachineCommand,
   type MachineKind,
@@ -146,17 +147,30 @@ export class DefaultMachineGateway implements MachineGateway {
     try {
       parsed = JSON.parse(raw);
     } catch {
+      this.sendWireError(machineId, 'Invalid JSON payload');
       return;
     }
 
     const result = WireInboundMessageSchema.safeParse(parsed);
     if (!result.success) {
+      this.sendWireError(machineId, 'Malformed or unsupported wire message');
       return;
     }
 
     const message = result.data;
     const peer = this.peers.get(machineId);
     if (!peer) {
+      return;
+    }
+
+    if (
+      message.type === 'command.ack' &&
+      !isSupportedProtocolVersion(message.payload.protocol_version)
+    ) {
+      this.sendWireError(
+        machineId,
+        `Unsupported protocol version: ${String(message.payload.protocol_version)}`,
+      );
       return;
     }
 
@@ -247,6 +261,21 @@ export class DefaultMachineGateway implements MachineGateway {
       peer.pendingCommands.set(command.command_id, pending);
       peer.send(JSON.stringify(wire));
     });
+  }
+
+  private sendWireError(machineId: string, message: string): void {
+    const peer = this.peers.get(machineId);
+    if (!peer) {
+      return;
+    }
+    peer.send(
+      JSON.stringify({
+        type: 'error',
+        id: randomUUID(),
+        timestamp: nowIso(),
+        payload: { machine_id: machineId, message },
+      }),
+    );
   }
 
   private resolvePendingCommand(peer: MachinePeerConnection, ack: CommandAcknowledgement): void {

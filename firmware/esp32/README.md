@@ -1,21 +1,30 @@
-# ESP32 Firmware (Structural Placeholder)
+# ESP32 Firmware
 
-> **Status:** Phase 1A — directory only. No firmware implementation.
+> **Status:** Phase 1J — protocol reference and integration boundary defined. Motor-control firmware not implemented.
 
-This directory is reserved for ESP-IDF firmware (`C/C++`) per [ESP32 Architecture](../../docs/embedded/ESP32_ARCHITECTURE.md).
+## Phase 1J Deliverables
 
-## Not implemented in Phase 1A
+- [PROTOCOL.md](./PROTOCOL.md) — wire protocol reference matching backend implementation
+- Integration boundary documented in [docs/machine/PHASE_1J.md](../../docs/machine/PHASE_1J.md)
 
-- GPIO pin assignments
-- Motor drivers
+## Reference Implementation
+
+Use the Node.js simulator as protocol reference until firmware is implemented:
+
+- `apps/esp32-simulator/src/client.ts` — WebSocket connection + auth headers
+- `apps/esp32-simulator/src/simulator/command-handler.ts` — command handling + telemetry
+
+## Not Implemented
+
+- GPIO / motor drivers
 - Encoder / IMU drivers
-- Actuator control
-- RPM limits or physical units
-- Machine state machine code
+- NVS calibration storage (simulator uses in-memory store)
+- Local watchdog firmware
+- OTA updates
 
-Firmware development begins in Phase 3 after simulator and backend protocol work.
+## Building Firmware (Future)
 
-## Future layout (planned)
+Requires ESP-IDF v5.x (exact version TBD — see UD-08).
 
 ```
 firmware/esp32/
@@ -25,4 +34,6 @@ firmware/esp32/
 └── sdkconfig.defaults
 ```
 
-Build with ESP-IDF v5.x (exact version TBD — see UD-08).
+## Safety
+
+The ESP32 must enforce local safety independently of backend connectivity. See PROTOCOL.md.

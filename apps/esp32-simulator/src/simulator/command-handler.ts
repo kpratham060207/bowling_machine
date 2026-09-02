@@ -4,6 +4,7 @@ import {
   PROTOCOL_VERSION,
   type CommandAcknowledgement,
   type MachineCommand,
+  type MachineDeliveryParameters,
   type MachineStatus,
 } from '@bowling-machine/api-contracts';
 import {
@@ -20,9 +21,22 @@ export type SimulatorCallbacks = {
   schedule: (fn: () => void, delayMs: number) => ReturnType<typeof setTimeout>;
 };
 
+type SimulatorOptions = {
+  machineKind?: 'SIMULATOR' | 'HARDWARE';
+};
+
+/** Returns true when required machine parameters contain null values — real ESP32 must reject these. */
+function hasNullRequiredParameters(parameters: MachineDeliveryParameters): boolean {
+  return (
+    parameters.wheel1_target_rpm === null ||
+    parameters.wheel2_target_rpm === null ||
+    parameters.feeder_delay_ms === null
+  );
+}
+
 /**
  * Handles domain commands for the simulator — validates, acks, transitions state,
- * and emits telemetry/events with deterministic timing (no real physics).
+ * and emits telemetry/events. Mirrors the ESP32 peer contract for protocol parity.
  */
 export class SimulatorCommandHandler {
   readonly runtime: SimulatorRuntime;
@@ -32,8 +46,9 @@ export class SimulatorCommandHandler {
     machineId: string,
     private readonly callbacks: SimulatorCallbacks,
     private readonly failureMode: FailureMode,
+    options: SimulatorOptions = {},
   ) {
-    this.runtime = createInitialRuntime(machineId);
+    this.runtime = createInitialRuntime(machineId, options.machineKind ?? 'SIMULATOR');
     this.bootstrap();
   }
 
@@ -132,7 +147,7 @@ export class SimulatorCommandHandler {
         this.sendAck(command, true, null, `${command.command_type} simulated (no-op)`);
         break;
       case 'SET_CONFIGURATION':
-        this.sendAck(command, true, null, 'Configuration accepted (simulated)');
+        this.handleSetConfiguration(command);
         break;
       case 'THROW_SEQUENCE':
         this.handleThrowSequence(command);
@@ -140,6 +155,15 @@ export class SimulatorCommandHandler {
       default:
         this.sendAck(command, false, 'COMMAND_REJECTED', 'Unknown command');
     }
+  }
+
+  private handleSetConfiguration(command: MachineCommand): void {
+    if (command.command_type !== 'SET_CONFIGURATION') {
+      return;
+    }
+
+    this.runtime.storedCalibration = command.payload.data;
+    this.sendAck(command, true, null, 'Configuration stored (simulated NVS)');
   }
 
   private handleHome(command: MachineCommand): void {
@@ -179,6 +203,8 @@ export class SimulatorCommandHandler {
       this.runtime.wheel1CurrentRpm = 0;
       this.runtime.wheel2CurrentRpm = 0;
       this.runtime.sequenceRemaining = 0;
+      this.runtime.sequenceTotal = 0;
+      this.runtime.activeDeliveryId = null;
       const prev = transitionState(this.runtime, 'READY');
       this.runtime.activeCommandId = null;
       this.emitStateChanged(prev, 'READY');
@@ -206,6 +232,17 @@ export class SimulatorCommandHandler {
       return;
     }
 
+    const parameters = command.payload.parameters;
+    if (hasNullRequiredParameters(parameters)) {
+      this.sendAck(
+        command,
+        false,
+        'UNCALIBRATED',
+        'Required machine parameters are not calibrated',
+      );
+      return;
+    }
+
     if (shouldInjectFailure(this.failureMode, 'feeder_failure')) {
       this.sendAck(command, false, 'FEEDER_JAM', 'Injected feeder failure');
       return;
@@ -213,16 +250,25 @@ export class SimulatorCommandHandler {
 
     const deliveryCount = command.payload.delivery_count;
     this.runtime.sequenceRemaining = deliveryCount;
+    this.runtime.sequenceTotal = deliveryCount;
+    this.runtime.activeDeliveryId = command.payload.delivery_id ?? null;
     this.runtime.activeCommandId = command.command_id;
+    this.runtime.wheel1TargetRpm = parameters.wheel1_target_rpm;
+    this.runtime.wheel2TargetRpm = parameters.wheel2_target_rpm;
     this.sendAck(command, true, null, 'Throw sequence accepted');
 
-    this.simulateThrowSequence(deliveryCount);
+    this.simulateThrowSequence(deliveryCount, parameters);
   }
 
-  private simulateThrowSequence(deliveryCount: number): void {
+  private simulateThrowSequence(
+    deliveryCount: number,
+    parameters: MachineDeliveryParameters,
+  ): void {
     const runBall = (index: number): void => {
       if (index >= deliveryCount) {
         this.runtime.activeCommandId = null;
+        this.runtime.activeDeliveryId = null;
+        this.runtime.sequenceRemaining = 0;
         transitionState(this.runtime, 'READY');
         this.publishStatus();
         return;
@@ -242,12 +288,12 @@ export class SimulatorCommandHandler {
           return;
         }
 
-        this.runtime.wheel1TargetRpm = 1200;
-        this.runtime.wheel2TargetRpm = 1180;
+        this.runtime.wheel1TargetRpm = parameters.wheel1_target_rpm;
+        this.runtime.wheel2TargetRpm = parameters.wheel2_target_rpm;
 
         this.callbacks.schedule(() => {
-          this.runtime.wheel1CurrentRpm = 1200;
-          this.runtime.wheel2CurrentRpm = 1180;
+          this.runtime.wheel1CurrentRpm = parameters.wheel1_target_rpm;
+          this.runtime.wheel2CurrentRpm = parameters.wheel2_target_rpm;
           previous = transitionState(this.runtime, 'READY_TO_THROW');
           this.emitStateChanged(previous, 'READY_TO_THROW');
 
@@ -264,7 +310,7 @@ export class SimulatorCommandHandler {
               this.publishStatus();
               runBall(index + 1);
             }, 150);
-          }, 100);
+          }, parameters.feeder_delay_ms ?? 100);
         }, 200);
       }, 150);
     };
@@ -312,14 +358,19 @@ export class SimulatorCommandHandler {
   }
 
   private publishStatus(): void {
+    const ballsDelivered =
+      this.runtime.sequenceTotal > 0
+        ? this.runtime.sequenceTotal - this.runtime.sequenceRemaining
+        : 0;
+
     const status: MachineStatus = {
       machine_id: this.runtime.machineId,
       timestamp: new Date().toISOString(),
-      kind: 'SIMULATOR',
+      kind: this.runtime.machineKind,
       connection_status: 'CONNECTED',
       state: this.runtime.state,
       active_command_id: this.runtime.activeCommandId,
-      active_delivery_id: null,
+      active_delivery_id: this.runtime.activeDeliveryId,
       wheel1_current_rpm: this.runtime.wheel1CurrentRpm,
       wheel2_current_rpm: this.runtime.wheel2CurrentRpm,
       wheel1_target_rpm: this.runtime.wheel1TargetRpm,
@@ -339,6 +390,15 @@ export class SimulatorCommandHandler {
             recoverable: true,
           }
         : null,
+      ...(this.runtime.activeDeliveryId && this.runtime.sequenceTotal > 0
+        ? {
+            delivery_progress: {
+              delivery_id: this.runtime.activeDeliveryId,
+              balls_delivered: ballsDelivered,
+              balls_remaining: this.runtime.sequenceRemaining,
+            },
+          }
+        : {}),
     };
 
     this.callbacks.send({

@@ -10,6 +10,7 @@ export type SimulatorConfig = {
   connectionSecret: string;
   heartbeatIntervalMs: number;
   failureMode: ReturnType<typeof parseFailureMode>;
+  machineKind: 'SIMULATOR' | 'HARDWARE';
 };
 
 /**
@@ -29,6 +30,7 @@ export class SimulatorClient {
       headers: {
         'X-Machine-Id': this.config.machineId,
         'X-Machine-Secret': this.config.connectionSecret,
+        'X-Protocol-Version': '1.0',
       },
     });
 
@@ -45,6 +47,7 @@ export class SimulatorClient {
           schedule: (fn, delayMs) => setTimeout(fn, delayMs),
         },
         this.config.failureMode,
+        { machineKind: this.config.machineKind },
       );
 
       if (this.config.failureMode === 'emergency_stop') {
@@ -92,6 +95,8 @@ export function loadSimulatorConfig(): SimulatorConfig {
   const connectionSecret = process.env['SIMULATOR_CONNECTION_SECRET'] ?? 'dev-simulator-secret-001';
   const heartbeatIntervalMs = Number(process.env['SIMULATOR_HEARTBEAT_MS'] ?? 5000);
   const failureMode = parseFailureMode(process.env['SIMULATOR_FAILURE_MODE']);
+  const machineKind =
+    process.env['SIMULATOR_MACHINE_KIND'] === 'HARDWARE' ? 'HARDWARE' : 'SIMULATOR';
 
   return {
     backendUrl: backendUrl.replace(/^http/i, 'ws'),
@@ -99,5 +104,6 @@ export function loadSimulatorConfig(): SimulatorConfig {
     connectionSecret,
     heartbeatIntervalMs,
     failureMode,
+    machineKind,
   };
 }

@@ -8,33 +8,44 @@ import type { MachineState } from '@bowling-machine/api-contracts';
  */
 export type SimulatorRuntime = {
   machineId: string;
+  machineKind: 'SIMULATOR' | 'HARDWARE';
   state: MachineState;
   homingStatus: 'UNKNOWN' | 'NOT_HOMED' | 'HOMING' | 'HOMED' | 'FAULT';
   emergencyStopActive: boolean;
   activeFaultCode: string | null;
   activeCommandId: string | null;
+  activeDeliveryId: string | null;
   wheel1CurrentRpm: number | null;
   wheel2CurrentRpm: number | null;
   wheel1TargetRpm: number | null;
   wheel2TargetRpm: number | null;
   feederStatus: 'IDLE' | 'READY' | 'FEEDING' | 'JAMMED' | 'FAULT' | 'UNKNOWN';
   sequenceRemaining: number;
+  sequenceTotal: number;
+  storedCalibration: Record<string, unknown> | null;
 };
 
-export function createInitialRuntime(machineId: string): SimulatorRuntime {
+export function createInitialRuntime(
+  machineId: string,
+  machineKind: 'SIMULATOR' | 'HARDWARE' = 'SIMULATOR',
+): SimulatorRuntime {
   return {
     machineId,
+    machineKind,
     state: 'INITIALIZING',
     homingStatus: 'NOT_HOMED',
     emergencyStopActive: false,
     activeFaultCode: null,
     activeCommandId: null,
+    activeDeliveryId: null,
     wheel1CurrentRpm: 0,
     wheel2CurrentRpm: 0,
     wheel1TargetRpm: null,
     wheel2TargetRpm: null,
     feederStatus: 'IDLE',
     sequenceRemaining: 0,
+    sequenceTotal: 0,
+    storedCalibration: null,
   };
 }
 

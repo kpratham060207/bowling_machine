@@ -8,7 +8,12 @@ import type {
 
 /**
  * Machine gateway boundary — business logic talks to this interface, not raw WebSockets.
- * Transport details (Fastify WS, headers, wire codec) stay in gateway implementation files.
+ *
+ * Transport implementations:
+ * - DefaultMachineGateway + machine-ws.ts (WebSocket peer transport)
+ * - Simulator peer (apps/esp32-simulator) — same wire protocol as future ESP32
+ *
+ * Player/session/calculation code must not branch on simulator vs hardware.
  */
 export interface MachineGateway {
   /** Live status snapshot maintained by the gateway from machine telemetry. */
