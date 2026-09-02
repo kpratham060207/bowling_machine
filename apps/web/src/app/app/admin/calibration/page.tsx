@@ -105,6 +105,14 @@ export default function AdminCalibrationPage() {
         ← Player app
       </Link>
       <h1 className="text-2xl font-bold">Calibration management</h1>
+      {selectedMachineId ? (
+        <Link
+          href={`/app/admin/machines/${selectedMachineId}`}
+          className="text-sm text-pitch-700 hover:underline"
+        >
+          View machine hardware status
+        </Link>
+      ) : null}
       <p className="text-sm text-slate-600">
         Simulation profiles are explicitly labeled — not production physical constants.
       </p>

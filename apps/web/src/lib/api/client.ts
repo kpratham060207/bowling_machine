@@ -1,6 +1,8 @@
 import type {
   CalibrationProfileDetail,
   CalibrationProfileSummary,
+  AdminMachineDetail,
+  MachineRegistrationSecret,
   CreateCalibrationProfileRequest,
   CreateDeliveryRequest,
   CreatePracticePlanRequest,
@@ -236,6 +238,17 @@ export class ApiClient {
     Array<{ machine_id: string; name: string; kind: string; registry_status: string }>
   > {
     return this.request('/api/v1/admin/machines');
+  }
+
+  getAdminMachineDetail(machineId: string): Promise<AdminMachineDetail> {
+    return this.request<AdminMachineDetail>(`/api/v1/admin/machines/${machineId}`);
+  }
+
+  createMachineRegistration(machineId: string): Promise<MachineRegistrationSecret> {
+    return this.request<MachineRegistrationSecret>(
+      `/api/v1/admin/machines/${machineId}/registration`,
+      { method: 'POST' },
+    );
   }
 
   listCalibrationProfiles(machineId: string): Promise<CalibrationProfileSummary[]> {
