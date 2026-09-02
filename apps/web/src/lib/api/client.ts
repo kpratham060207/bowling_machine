@@ -1,11 +1,17 @@
 import type {
+  CalibrationProfileDetail,
+  CalibrationProfileSummary,
+  CreateCalibrationProfileRequest,
   CreateDeliveryRequest,
+  CreatePracticePlanRequest,
   CreateSessionRequest,
   Delivery,
   MachineStatus,
   Player,
+  PracticePlan,
   PracticeSession,
   UpdatePlayerProfileRequest,
+  UpdatePracticePlanRequest,
 } from '@bowling-machine/api-contracts';
 import { getApiBaseUrl } from '@/lib/supabase/client';
 import { ApiClientError } from './errors';
@@ -185,6 +191,74 @@ export class ApiClient {
       method: 'POST',
       body: JSON.stringify(body),
     });
+  }
+
+  listPracticePlans(): Promise<PracticePlan[]> {
+    return this.request<PracticePlan[]>('/api/v1/practice-plans');
+  }
+
+  getPracticePlan(planId: string): Promise<PracticePlan> {
+    return this.request<PracticePlan>(`/api/v1/practice-plans/${planId}`);
+  }
+
+  createPracticePlan(body: CreatePracticePlanRequest): Promise<PracticePlan> {
+    return this.request<PracticePlan>('/api/v1/practice-plans', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  updatePracticePlan(planId: string, body: UpdatePracticePlanRequest): Promise<PracticePlan> {
+    return this.request<PracticePlan>(`/api/v1/practice-plans/${planId}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+  }
+
+  deletePracticePlan(planId: string): Promise<{ deleted: boolean }> {
+    return this.request<{ deleted: boolean }>(`/api/v1/practice-plans/${planId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  startPracticePlan(planId: string, machineId: string): Promise<PracticeSession> {
+    return this.request<PracticeSession>(`/api/v1/practice-plans/${planId}/start`, {
+      method: 'POST',
+      body: JSON.stringify({ machine_id: machineId }),
+    });
+  }
+
+  getAdminStatus(): Promise<{ admin: boolean; user_id: string; role: string }> {
+    return this.request<{ admin: boolean; user_id: string; role: string }>('/api/v1/admin/status');
+  }
+
+  listAdminMachines(): Promise<
+    Array<{ machine_id: string; name: string; kind: string; registry_status: string }>
+  > {
+    return this.request('/api/v1/admin/machines');
+  }
+
+  listCalibrationProfiles(machineId: string): Promise<CalibrationProfileSummary[]> {
+    return this.request<CalibrationProfileSummary[]>(
+      `/api/v1/admin/machines/${machineId}/calibration`,
+    );
+  }
+
+  createCalibrationProfile(
+    machineId: string,
+    body: CreateCalibrationProfileRequest,
+  ): Promise<CalibrationProfileDetail> {
+    return this.request<CalibrationProfileDetail>(
+      `/api/v1/admin/machines/${machineId}/calibration`,
+      { method: 'POST', body: JSON.stringify(body) },
+    );
+  }
+
+  activateCalibrationProfile(profileId: string): Promise<CalibrationProfileDetail> {
+    return this.request<CalibrationProfileDetail>(
+      `/api/v1/admin/calibration/${profileId}/activate`,
+      { method: 'POST' },
+    );
   }
 }
 

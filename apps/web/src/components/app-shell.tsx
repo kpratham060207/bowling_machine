@@ -8,6 +8,7 @@ import { LogoutButton } from '@/components/auth-forms';
 const NAV_ITEMS = [
   { href: '/app', label: 'Home' },
   { href: '/app/practice', label: 'Practice' },
+  { href: '/app/plans', label: 'Plans' },
   { href: '/app/history', label: 'History' },
   { href: '/app/profile', label: 'Profile' },
 ];

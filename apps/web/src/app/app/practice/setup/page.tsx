@@ -28,6 +28,10 @@ function PracticeSetupContent() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showReview, setShowReview] = useState(false);
+  const [savingPlan, setSavingPlan] = useState(false);
+  const [planName, setPlanName] = useState('');
+  const [showSavePlan, setShowSavePlan] = useState(false);
+  const [planSavedMessage, setPlanSavedMessage] = useState<string | null>(null);
 
   const validation = useMemo(() => validatePracticeSetup(setupState), [setupState]);
 
@@ -55,6 +59,31 @@ function PracticeSetupContent() {
       }
     })();
   }, [api, sessionId, setActiveSessionId, router]);
+
+  async function handleSaveAsPlan() {
+    if (!validation.valid || savingPlan || !planName.trim()) {
+      return;
+    }
+
+    setSavingPlan(true);
+    setError(null);
+    setPlanSavedMessage(null);
+
+    try {
+      const delivery = setupStateToDeliveryInput(setupState);
+      const plan = await api.createPracticePlan({
+        name: planName.trim(),
+        deliveries: [delivery],
+      });
+      setPlanSavedMessage(`Saved as "${plan.name}". View it in Plans.`);
+      setShowSavePlan(false);
+      setPlanName('');
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.displayMessage : 'Failed to save practice plan');
+    } finally {
+      setSavingPlan(false);
+    }
+  }
 
   async function handleStartPractice() {
     if (!sessionId || !validation.valid || submitting) {
@@ -104,6 +133,8 @@ function PracticeSetupContent() {
 
       {error ? <Alert variant="error">{error}</Alert> : null}
 
+      {planSavedMessage ? <Alert variant="success">{planSavedMessage}</Alert> : null}
+
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <section className="card">
           <InteractivePitch
@@ -148,7 +179,7 @@ function PracticeSetupContent() {
             <Alert variant="warning">{validation.errors.join(' · ')}</Alert>
           ) : null}
 
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <button
               type="button"
               className="btn-primary"
@@ -156,6 +187,16 @@ function PracticeSetupContent() {
               onClick={() => void handleStartPractice()}
             >
               {submitting ? 'Starting practice…' : 'Start Practice'}
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={!validation.valid || submitting || savingPlan}
+              onClick={() => {
+                setShowSavePlan((current) => !current);
+              }}
+            >
+              Save as Practice Plan
             </button>
             <button
               type="button"
@@ -168,6 +209,32 @@ function PracticeSetupContent() {
               Edit
             </button>
           </div>
+
+          {showSavePlan ? (
+            <div className="space-y-3 rounded-lg border border-slate-200 p-4">
+              <label className="block space-y-1">
+                <span className="text-sm font-medium">Plan name</span>
+                <input
+                  type="text"
+                  className="input w-full"
+                  value={planName}
+                  maxLength={100}
+                  placeholder="Fast Outswing Practice"
+                  onChange={(event) => {
+                    setPlanName(event.target.value);
+                  }}
+                />
+              </label>
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={!validation.valid || savingPlan || !planName.trim()}
+                onClick={() => void handleSaveAsPlan()}
+              >
+                {savingPlan ? 'Saving plan…' : 'Save plan'}
+              </button>
+            </div>
+          ) : null}
         </section>
       )}
     </div>
