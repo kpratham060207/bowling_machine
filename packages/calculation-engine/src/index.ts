@@ -14,3 +14,4 @@ export * from './validation/machine-capability-validator.js';
 export * from './validation/safety-validator.js';
 export * from './engine/delivery-calculation-engine.js';
 export * from './fixtures/simulation-calibration-v1.js';
+export * from './fixtures/test-delivery-request.js';

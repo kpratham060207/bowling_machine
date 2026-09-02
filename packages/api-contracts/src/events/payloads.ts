@@ -29,6 +29,9 @@ export const DeliveryLifecyclePayloadSchema = z.object({
   delivery_id: EntityIdSchema,
   sequence_number: z.number().int().positive(),
   status: DeliveryStatusSchema.optional(),
+  /** Present for browser WebSocket authorization — never trust client-supplied values. */
+  player_id: EntityIdSchema.optional(),
+  machine_id: EntityIdSchema.optional(),
 });
 
 export const SessionLifecyclePayloadSchema = z.object({

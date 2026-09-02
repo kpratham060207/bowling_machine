@@ -43,6 +43,10 @@ export const WebSocketEventSchema = z.discriminatedUnion('event_type', [
     payload: DeliveryLifecyclePayloadSchema,
   }),
   EventEnvelopeBaseSchema.extend({
+    event_type: z.literal('DELIVERY_FAILED'),
+    payload: DeliveryLifecyclePayloadSchema,
+  }),
+  EventEnvelopeBaseSchema.extend({
     event_type: z.literal('SESSION_STARTED'),
     payload: SessionLifecyclePayloadSchema,
   }),
