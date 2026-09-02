@@ -18,12 +18,12 @@ Player (REST)
 
 ## Session lifecycle (database)
 
-| Status    | Meaning                                      |
-| --------- | -------------------------------------------- |
-| ACTIVE    | Session created; deliveries may be queued    |
+| Status    | Meaning                                       |
+| --------- | --------------------------------------------- |
+| ACTIVE    | Session created; deliveries may be queued     |
 | PAUSED    | Reserved — not used in Phase 1G orchestration |
-| COMPLETED | All deliveries finished successfully         |
-| CANCELLED | Stopped by player or failed mid-session      |
+| COMPLETED | All deliveries finished successfully          |
+| CANCELLED | Stopped by player or failed mid-session       |
 
 Conceptual mapping from product spec:
 
@@ -48,16 +48,16 @@ Transient orchestration steps (not persisted): calculating → validated → que
 
 ## REST endpoints (`/api/v1/sessions`)
 
-| Method | Path                                           | Description                          |
-| ------ | ---------------------------------------------- | ------------------------------------ |
-| POST   | `/api/v1/sessions`                             | Create session (+ optional deliveries) |
-| GET    | `/api/v1/sessions`                             | List player's sessions               |
-| GET    | `/api/v1/sessions/:sessionId`                  | Get session with deliveries          |
-| GET    | `/api/v1/sessions/:sessionId/deliveries`       | List deliveries                      |
-| GET    | `/api/v1/sessions/:sessionId/deliveries/:id`   | Get one delivery                     |
-| POST   | `/api/v1/sessions/:sessionId/deliveries`       | Add delivery + orchestrate           |
-| POST   | `/api/v1/sessions/:sessionId/start`            | Execute first pending delivery       |
-| POST   | `/api/v1/sessions/:sessionId/stop`             | Stop session (no control lock required) |
+| Method | Path                                         | Description                             |
+| ------ | -------------------------------------------- | --------------------------------------- |
+| POST   | `/api/v1/sessions`                           | Create session (+ optional deliveries)  |
+| GET    | `/api/v1/sessions`                           | List player's sessions                  |
+| GET    | `/api/v1/sessions/:sessionId`                | Get session with deliveries             |
+| GET    | `/api/v1/sessions/:sessionId/deliveries`     | List deliveries                         |
+| GET    | `/api/v1/sessions/:sessionId/deliveries/:id` | Get one delivery                        |
+| POST   | `/api/v1/sessions/:sessionId/deliveries`     | Add delivery + orchestrate              |
+| POST   | `/api/v1/sessions/:sessionId/start`          | Execute first pending delivery          |
+| POST   | `/api/v1/sessions/:sessionId/stop`           | Stop session (no control lock required) |
 
 ## Orchestration preconditions (throw sequence)
 
@@ -95,13 +95,13 @@ Browser WebSocket filters session/delivery events by `player_id` and machine eve
 
 ## Key modules
 
-| Module | Path |
-| ------ | ---- |
-| SessionService | `apps/api/src/services/session.service.ts` |
+| Module                       | Path                                                      |
+| ---------------------------- | --------------------------------------------------------- |
+| SessionService               | `apps/api/src/services/session.service.ts`                |
 | DeliveryOrchestrationService | `apps/api/src/services/delivery-orchestration.service.ts` |
-| DeliveryExecutionTracker | `apps/api/src/services/delivery-execution-tracker.ts` |
-| DatabaseCalibrationProvider | `apps/api/src/services/calibration-provider.service.ts` |
-| Session routes | `apps/api/src/routes/session.routes.ts` |
+| DeliveryExecutionTracker     | `apps/api/src/services/delivery-execution-tracker.ts`     |
+| DatabaseCalibrationProvider  | `apps/api/src/services/calibration-provider.service.ts`   |
+| Session routes               | `apps/api/src/routes/session.routes.ts`                   |
 
 ## Known limitations (Phase 1G)
 

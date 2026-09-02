@@ -231,18 +231,18 @@ Response:
 
 ### Practice Sessions
 
-| Method | Path                                        | Auth | Role   | Description                |
-| ------ | ------------------------------------------- | ---- | ------ | -------------------------- |
-| POST   | `/api/v1/sessions`                          | Yes  | PLAYER | Create practice session    |
-| GET    | `/api/v1/sessions`                          | Yes  | PLAYER | List player's sessions     |
-| GET    | `/api/v1/sessions/:sessionId`               | Yes  | PLAYER | Get session details        |
-| GET    | `/api/v1/sessions/:sessionId/deliveries`    | Yes  | PLAYER | List session deliveries    |
-| GET    | `/api/v1/sessions/:sessionId/deliveries/:deliveryId` | Yes | PLAYER | Get delivery detail |
-| POST   | `/api/v1/sessions/:sessionId/deliveries`    | Yes  | PLAYER | Add delivery + orchestrate |
-| POST   | `/api/v1/sessions/:sessionId/start`         | Yes  | PLAYER | Start first pending delivery |
-| POST   | `/api/v1/sessions/:sessionId/stop`          | Yes  | PLAYER | Stop session (idempotent)  |
-| PUT    | `/api/v1/sessions/:id/pause`                | Yes  | PLAYER | Pause active session (planned) |
-| PUT    | `/api/v1/sessions/:id/resume`               | Yes  | PLAYER | Resume paused session (planned) |
+| Method | Path                                                 | Auth | Role   | Description                     |
+| ------ | ---------------------------------------------------- | ---- | ------ | ------------------------------- |
+| POST   | `/api/v1/sessions`                                   | Yes  | PLAYER | Create practice session         |
+| GET    | `/api/v1/sessions`                                   | Yes  | PLAYER | List player's sessions          |
+| GET    | `/api/v1/sessions/:sessionId`                        | Yes  | PLAYER | Get session details             |
+| GET    | `/api/v1/sessions/:sessionId/deliveries`             | Yes  | PLAYER | List session deliveries         |
+| GET    | `/api/v1/sessions/:sessionId/deliveries/:deliveryId` | Yes  | PLAYER | Get delivery detail             |
+| POST   | `/api/v1/sessions/:sessionId/deliveries`             | Yes  | PLAYER | Add delivery + orchestrate      |
+| POST   | `/api/v1/sessions/:sessionId/start`                  | Yes  | PLAYER | Start first pending delivery    |
+| POST   | `/api/v1/sessions/:sessionId/stop`                   | Yes  | PLAYER | Stop session (idempotent)       |
+| PUT    | `/api/v1/sessions/:id/pause`                         | Yes  | PLAYER | Pause active session (planned)  |
+| PUT    | `/api/v1/sessions/:id/resume`                        | Yes  | PLAYER | Resume paused session (planned) |
 
 **POST `/api/v1/sessions`**
 
