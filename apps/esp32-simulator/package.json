@@ -5,6 +5,12 @@
   "description": "ESP32 machine simulator for local development — Phase 1B+",
   "license": "UNLICENSED",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/lib.d.ts",
+      "default": "./dist/lib.js"
+    }
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
@@ -14,11 +20,13 @@
   },
   "dependencies": {
     "@bowling-machine/api-contracts": "workspace:*",
-    "@bowling-machine/shared": "workspace:*"
+    "@bowling-machine/shared": "workspace:*",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@bowling-machine/config": "workspace:*",
     "@types/node": "^22.10.2",
+    "@types/ws": "^8.5.13",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }

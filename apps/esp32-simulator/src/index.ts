@@ -1,21 +1,31 @@
 /**
- * @bowling-machine/esp32-simulator — application entry point
+ * ESP32 machine simulator — connects to backend /ws/machine and implements protocol 1.0.
  *
- * PLACEHOLDER — Phase 1A foundation only.
- *
- * This package will simulate ESP32 protocol behavior for backend/frontend development.
- * It does NOT implement machine state machine, protocol, or WebSocket server yet.
+ * SIMULATED BEHAVIOR ONLY — does not control physical hardware.
+ * See docs/protocol/SIMULATOR.md for state machine and failure injection.
  */
 import { PROTOCOL_VERSION } from '@bowling-machine/api-contracts';
-import { SHARED_PLACEHOLDER } from '@bowling-machine/shared';
-
-export const SIMULATOR_PLACEHOLDER = 'phase-1a-foundation' as const;
+import { loadSimulatorConfig, SimulatorClient } from './client.js';
 
 export function main(): void {
-  console.log('[esp32-simulator] placeholder only — no simulator started');
-  console.log('[esp32-simulator] phase:', SIMULATOR_PLACEHOLDER);
+  const config = loadSimulatorConfig();
+  console.log('[esp32-simulator] starting (simulated machine peer)');
   console.log('[esp32-simulator] protocol version:', PROTOCOL_VERSION);
-  console.log('[esp32-simulator] shared:', SHARED_PLACEHOLDER);
+  console.log('[esp32-simulator] machine id:', config.machineId);
+  console.log('[esp32-simulator] backend:', config.backendUrl);
+  console.log('[esp32-simulator] failure mode:', config.failureMode);
+
+  const client = new SimulatorClient(config);
+  client.connect();
+
+  const shutdown = (): void => {
+    console.log('[esp32-simulator] shutting down');
+    client.disconnect();
+    process.exit(0);
+  };
+
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 }
 
 main();
