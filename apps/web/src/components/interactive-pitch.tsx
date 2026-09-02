@@ -104,18 +104,14 @@ export function InteractivePitch({
         />
 
         {/* Stumps — batter end (top) */}
-        <g
-          transform={`translate(${(topLeftX + topRightX) / 2 - 2}, ${topY + 2})`}
-        >
+        <g transform={`translate(${(topLeftX + topRightX) / 2 - 2}, ${topY + 2})`}>
           <rect x="0" y="0" width="0.6" height="3" fill="#f5f5f4" />
           <rect x="1.7" y="0" width="0.6" height="3" fill="#f5f5f4" />
           <rect x="3.4" y="0" width="0.6" height="3" fill="#f5f5f4" />
         </g>
 
         {/* Stumps — bowler end (bottom) */}
-        <g
-          transform={`translate(${(bottomLeftX + bottomRightX) / 2 - 2}, ${bottomY - 5})`}
-        >
+        <g transform={`translate(${(bottomLeftX + bottomRightX) / 2 - 2}, ${bottomY - 5})`}>
           <rect x="0" y="0" width="0.6" height="3" fill="#f5f5f4" />
           <rect x="1.7" y="0" width="0.6" height="3" fill="#f5f5f4" />
           <rect x="3.4" y="0" width="0.6" height="3" fill="#f5f5f4" />
