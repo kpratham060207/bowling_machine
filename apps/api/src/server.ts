@@ -25,6 +25,8 @@ import { MachineService } from './services/machine.service.js';
 import { MachineCommandService } from './services/machine-command.service.js';
 import { SessionService } from './services/session.service.js';
 import { PracticePlanService } from './services/practice-plan.service.js';
+import { MachineConfigurationService } from './services/machine-configuration.service.js';
+import { MachineAdminService } from './services/machine-admin.service.js';
 import { CalibrationAdminService } from './services/calibration-admin.service.js';
 import { OrchestrationEventPublisher } from './services/orchestration-event-publisher.js';
 import { DeliveryOrchestrationService } from './services/delivery-orchestration.service.js';
@@ -56,7 +58,11 @@ export async function buildApiServer(env: ApiEnv) {
   );
   const sessionService = new SessionService(db);
   const practicePlanService = new PracticePlanService(db);
-  const calibrationAdminService = new CalibrationAdminService(db);
+  const calibrationAdminService = new CalibrationAdminService({
+    db,
+    machineConfigurationService: new MachineConfigurationService(commandService, gateway),
+  });
+  const machineAdminService = new MachineAdminService(db, gateway);
   const orchestrationEventPublisher = new OrchestrationEventPublisher(eventBus);
   const deliveryOrchestration = new DeliveryOrchestrationService(
     db,
@@ -125,7 +131,11 @@ export async function buildApiServer(env: ApiEnv) {
     await protectedApi.register((adminRoutes) => {
       adminRoutes.addHook('onRequest', requireAuthenticationHook);
       adminRoutes.addHook('onRequest', requireAdminHook);
-      registerAdminRoutes(adminRoutes, { db, calibrationAdminService });
+      registerAdminRoutes(adminRoutes, {
+        db,
+        calibrationAdminService,
+        machineAdminService,
+      });
     });
   });
 

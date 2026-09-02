@@ -9,10 +9,12 @@ import { machines } from '@bowling-machine/database';
 import { getAuthContext } from '../auth/middleware.js';
 import { rejectClientOwnershipFields } from '../auth/authorization.js';
 import type { CalibrationAdminService } from '../services/calibration-admin.service.js';
+import type { MachineAdminService } from '../services/machine-admin.service.js';
 
 type AdminRouteDeps = {
   db: Database['db'];
   calibrationAdminService: CalibrationAdminService;
+  machineAdminService: MachineAdminService;
 };
 
 /**
@@ -44,6 +46,22 @@ export function registerAdminRoutes(app: FastifyInstance, deps: AdminRouteDeps):
       },
       meta: { timestamp: new Date().toISOString() },
     };
+  });
+
+  app.get('/api/v1/admin/machines/:machineId', async (request) => {
+    const { machineId } = z.object({ machineId: z.string().uuid() }).parse(request.params);
+    const detail = await deps.machineAdminService.getMachineDetail(machineId);
+    return { data: detail };
+  });
+
+  app.post('/api/v1/admin/machines/:machineId/registration', async (request) => {
+    const auth = getAuthContext(request);
+    const { machineId } = z.object({ machineId: z.string().uuid() }).parse(request.params);
+    const registration = await deps.machineAdminService.createMachineRegistration(
+      auth.userId,
+      machineId,
+    );
+    return { data: registration };
   });
 
   app.get('/api/v1/admin/machines/:machineId/calibration', async (request) => {
