@@ -4,6 +4,8 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Bowling Machine',
   description: 'Smart cricket bowling machine — player training application',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: { capable: true, title: 'Bowling Machine' },
 };
 
 export const viewport: Viewport = {
