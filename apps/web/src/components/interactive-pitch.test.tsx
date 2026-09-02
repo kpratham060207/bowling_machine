@@ -1,17 +1,23 @@
 /**
  * @vitest-environment happy-dom
  */
-import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import React from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { InteractivePitch } from './interactive-pitch';
 
 describe('InteractivePitch', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it('shows instruction when no target is selected', () => {
     render(<InteractivePitch value={null} onChange={() => undefined} />);
     expect(screen.getByText(/tap where you want the ball to pitch/i)).toBeTruthy();
   });
 
-  it('calls onChange when the pitch surface is clicked', () => {
+  it('calls onChange when the pitch surface is clicked', async () => {
     const onChange = vi.fn();
     render(<InteractivePitch value={null} onChange={onChange} />);
 
@@ -21,6 +27,7 @@ describe('InteractivePitch', () => {
       return;
     }
 
+    svg.setPointerCapture = vi.fn();
     svg.getScreenCTM = () =>
       ({
         inverse: () => ({
@@ -41,7 +48,12 @@ describe('InteractivePitch', () => {
         matrixTransform: () => ({ x: 50, y: 80 }),
       }) as DOMPoint;
 
-    fireEvent.pointerDown(svg, { clientX: 100, clientY: 100, pointerId: 1 });
+    const user = userEvent.setup();
+    await user.pointer({
+      keys: '[MouseLeft>]',
+      target: svg,
+      coords: { clientX: 100, clientY: 100 },
+    });
 
     expect(onChange).toHaveBeenCalled();
     const target = onChange.mock.calls[0]?.[0] as { target_x: number; target_y: number };
@@ -56,6 +68,6 @@ describe('InteractivePitch', () => {
       <InteractivePitch value={{ target_x: 0.5, target_y: 0.5 }} onChange={() => undefined} />,
     );
     expect(document.querySelector('circle[fill="#dc2626"]')).toBeTruthy();
-    expect(screen.getByText(/target selected/i)).toBeTruthy();
+    expect(screen.getByText(/Target selected — tap elsewhere to adjust/i)).toBeTruthy();
   });
 });

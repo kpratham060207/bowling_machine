@@ -14,6 +14,8 @@ import {
   machineAccess,
   machineRegistrations,
   machines,
+  practicePlanDeliveries,
+  practicePlans,
   profiles,
   users,
 } from './schema/index';
@@ -32,6 +34,7 @@ export const SEED_IDS = {
   devFirmware: '33333333-3333-4333-8333-333333333333',
   devCalibration: '44444444-4444-4444-8444-444444444444',
   devRegistration: '55555555-5555-4555-8555-555555555555',
+  devPracticePlan: '66666666-6666-4666-8666-666666666666',
 } as const;
 
 export async function seedDevelopmentData(databaseUrl = getDatabaseUrl()): Promise<void> {
@@ -130,9 +133,41 @@ export async function seedDevelopmentData(databaseUrl = getDatabaseUrl()): Promi
       });
     }
 
+    /** Development practice plan — high-level requested parameters only (simulation values). */
+    await db
+      .insert(practicePlans)
+      .values({
+        id: SEED_IDS.devPracticePlan,
+        userId: SEED_IDS.devUser,
+        name: 'Dev Fast Practice',
+        description: 'Development-only saved plan — not production calibration data',
+      })
+      .onConflictDoNothing();
+
+    const existingPlanDeliveries = await db
+      .select()
+      .from(practicePlanDeliveries)
+      .where(eq(practicePlanDeliveries.planId, SEED_IDS.devPracticePlan))
+      .limit(1);
+
+    if (existingPlanDeliveries.length === 0) {
+      await db.insert(practicePlanDeliveries).values({
+        planId: SEED_IDS.devPracticePlan,
+        sequenceNumber: 1,
+        targetX: '0.62',
+        targetY: '0.73',
+        desiredSpeedKmh: '120.00',
+        ballType: 'FAST',
+        numberOfBalls: 6,
+        firstBallDelayMs: 3000,
+        intervalMs: 8000,
+      });
+    }
+
     console.log('[database] seed complete (simulation data only)');
     console.log('[database]   machine:', SEED_IDS.devMachine);
     console.log('[database]   dev user:', SEED_IDS.devUser);
+    console.log('[database]   practice plan:', SEED_IDS.devPracticePlan);
   } finally {
     await sql.end();
   }
