@@ -31,11 +31,7 @@ function parseJson(response: { json: () => unknown }): unknown {
 }
 
 /** Builds a Supabase-shaped SSR auth cookie for WebSocket cookie-auth tests. */
-function buildSupabaseAuthCookie(
-  accessToken: string,
-  projectRef: string,
-  userId: string,
-): string {
+function buildSupabaseAuthCookie(accessToken: string, projectRef: string, userId: string): string {
   const payload = JSON.stringify({
     access_token: accessToken,
     refresh_token: 'test-refresh-token',
