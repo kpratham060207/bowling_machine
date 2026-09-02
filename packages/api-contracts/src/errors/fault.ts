@@ -20,6 +20,8 @@ export const MachineFaultCodeSchema = z.enum([
   'IMU_FAILURE',
   'POWER_FAULT',
   'UNCALIBRATED',
+  'WATCHDOG_TIMEOUT',
+  'COMMUNICATION_FAULT',
   'UNKNOWN',
 ]);
 

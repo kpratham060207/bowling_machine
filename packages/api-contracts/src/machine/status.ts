@@ -48,6 +48,14 @@ export const MachineStatusSchema = z.object({
   homing_status: HomingStatusSchema,
   emergency_stop_active: z.boolean(),
   active_fault: MachineFaultSchema.nullable(),
+  /** Progress within an active throw sequence — optional until peer reports it. */
+  delivery_progress: z
+    .object({
+      delivery_id: EntityIdSchema,
+      balls_delivered: z.number().int().nonnegative(),
+      balls_remaining: z.number().int().nonnegative(),
+    })
+    .optional(),
 });
 
 export type MachineStatus = z.infer<typeof MachineStatusSchema>;
