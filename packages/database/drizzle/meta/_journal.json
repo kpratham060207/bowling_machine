@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788362238689,
+      "tag": "0000_stiff_mandroid",
+      "breakpoints": true
+    }
+  ]
+}

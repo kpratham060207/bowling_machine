@@ -24,6 +24,10 @@
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",
+    "db:migrate": "pnpm --filter @bowling-machine/database db:migrate",
+    "db:seed": "pnpm --filter @bowling-machine/database db:seed",
+    "db:generate": "pnpm --filter @bowling-machine/database db:generate",
+    "db:reset": "pnpm db:down && pnpm db:up && sleep 3 && pnpm db:migrate && pnpm db:seed",
     "clean": "pnpm -r exec rm -rf dist .next out coverage"
   },
   "devDependencies": {

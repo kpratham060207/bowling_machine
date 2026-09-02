@@ -2,7 +2,9 @@
   "extends": "@bowling-machine/config/tsconfig/node",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "moduleResolution": "Bundler",
+    "module": "ESNext"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.test.ts"]

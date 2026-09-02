@@ -1,217 +1,166 @@
 # Database Design
 
-> **Status:** Designed (not implemented)
+> **Status:** Implemented (Phase 1C)
 > **Last updated:** 2026-09-02
+> **Package:** `packages/database` (Drizzle ORM)
 
 ## Overview
 
-PostgreSQL is the primary data store, accessed via Drizzle ORM in `packages/database`. This document defines the planned schema. No migrations exist yet.
+PostgreSQL is the primary data store, accessed via Drizzle ORM in `packages/database`. Schema, migrations, seed, and connection factory are implemented.
 
-## Design Principles
-
-- Normalized UI coordinates stored as `DECIMAL(5,4)` when provided (optional, display replay)
-- Pitch reference coordinates stored as `DECIMAL(5,4)` (0.0000–1.0000 range) as `target_x`, `target_y`
-- Speeds stored in km/h as `DECIMAL(6,2)`
-- Ball types stored as PostgreSQL enum (extensible via migration)
-- Machine states stored as PostgreSQL enum
-- Timestamps in UTC (`TIMESTAMPTZ`)
-- Soft deletes where appropriate (profiles, machines)
-- Audit trail for admin actions and safety events
-
-## Entity Relationship Overview
+## Auth boundary
 
 ```
-users ────────── profiles
-  │                  │
-  │                  │
-  ├── practice_sessions ──── deliveries
-  │         │
-  │         └── machines ──── calibration_data
-  │                │
-  │                └── machine_registrations
+Supabase Auth (external)
+    │  user UUID
+    ▼
+users (application identity + role)
+    │  1:1
+    ▼
+profiles (display_name, batting_hand, bowling_hand, preferences, …)
+```
+
+- Passwords are **never** stored in PostgreSQL.
+- `users.id` matches the Supabase Auth user UUID.
+- `profiles.user_id` FK → `users.id`.
+
+## ID strategy
+
+- Primary keys: **UUID** (`gen_random_uuid()` default where applicable).
+- Command IDs: UUID supplied by backend (matches `CommandId` in api-contracts).
+- Seed data uses fixed UUIDs for reproducibility (`SEED_IDS` in seed script).
+
+## Timestamp strategy
+
+- All timestamps: **`TIMESTAMPTZ`** (UTC).
+- Application writes ISO-8601 strings; PostgreSQL stores UTC.
+
+## Tables (15)
+
+| Table                      | Purpose                                                           |
+| -------------------------- | ----------------------------------------------------------------- |
+| `users`                    | Application identity + role (PLAYER/ADMIN)                        |
+| `profiles`                 | Player profile (`batting_hand`, `bowling_hand` — no `handedness`) |
+| `firmware_versions`        | Firmware release registry (no OTA in MVP)                         |
+| `machines`                 | Machine registry (simulator/hardware, protocol version)           |
+| `machine_access`           | Player ↔ machine access grants                                    |
+| `machine_registrations`    | QR tokens + hashed connection secrets                             |
+| `practice_sessions`        | Session lifecycle (not machine runtime state)                     |
+| `deliveries`               | Requested + calculated + measured delivery data                   |
+| `practice_plans`           | Saved reusable plans                                              |
+| `practice_plan_deliveries` | Ordered plan delivery definitions                                 |
+| `machine_commands`         | Full command history + JSONB payload snapshots                    |
+| `telemetry_samples`        | Persisted telemetry (not every live packet)                       |
+| `faults`                   | Structured fault history                                          |
+| `calibration_profiles`     | Versioned calibration per machine                                 |
+| `audit_logs`               | Admin/security audit trail                                        |
+
+## Entity relationships
+
+```
+users ── profiles
   │
-  └── audit_logs
+  ├── machine_access ── machines ── machine_registrations
+  │                         │
+  │                         ├── calibration_profiles
+  │                         ├── firmware_versions (optional FK)
+  │                         ├── telemetry_samples
+  │                         ├── faults
+  │                         └── machine_commands
+  │
+  ├── practice_sessions ── deliveries ── machine_commands (optional FK)
+  │
+  └── practice_plans ── practice_plan_deliveries
 ```
 
-## Tables
+## Deliveries: requested vs calculated vs measured
 
-### users
+| Layer          | Storage                                                                          |
+| -------------- | -------------------------------------------------------------------------------- |
+| **Requested**  | Columns: `target_x`, `target_y`, `desired_speed_kmh`, `ball_type`, timing fields |
+| **Calculated** | JSONB: `calculated_parameters` (MachineDeliveryParameters shape)                 |
+| **Measured**   | JSONB: `measured` (nullable until hardware sensing)                              |
+| **Error**      | JSONB: `error` (fault snapshot on failure)                                       |
 
-Managed primarily by Supabase Auth. Local table mirrors essential fields.
+Original player request is **never overwritten** by calculated values.
 
-| Column     | Type                | Notes                         |
-| ---------- | ------------------- | ----------------------------- |
-| id         | UUID PK             | Matches Supabase Auth user ID |
-| email      | VARCHAR(255) UNIQUE |                               |
-| role       | user_role ENUM      | `PLAYER`, `ADMIN`             |
-| created_at | TIMESTAMPTZ         |                               |
-| updated_at | TIMESTAMPTZ         |                               |
+## JSONB decisions
 
-### profiles
+| Column                                       | Table                           | Reason                                  |
+| -------------------------------------------- | ------------------------------- | --------------------------------------- |
+| `preferences`, `practice_goals`              | `profiles`                      | Extensible player prefs                 |
+| `config`                                     | `machines`, `practice_sessions` | Flexible non-relational settings        |
+| `calculated_parameters`, `measured`, `error` | `deliveries`                    | Contract-shaped snapshots               |
+| `payload`                                    | `machine_commands`              | Full domain command snapshot for audit  |
+| `data`                                       | `calibration_profiles`          | Flexible calibration maps (physics TBD) |
+| `actuator_*_positions`, `imu`                | `telemetry_samples`             | Variable-length / unresolved units      |
+| `details`                                    | `audit_logs`                    | Event context                           |
 
-Player-specific profile data.
+## Command payload storage (Phase 1C decision)
 
-| Column       | Type            | Notes                                                                                                     |
-| ------------ | --------------- | --------------------------------------------------------------------------------------------------------- |
-| id           | UUID PK         |                                                                                                           |
-| user_id      | UUID FK → users | UNIQUE                                                                                                    |
-| display_name | VARCHAR(100)    |                                                                                                           |
-| handedness   | VARCHAR(10)     | `RIGHT`, `LEFT` (optional) — **deprecated; Phase 1C MUST replace with `batting_hand` and `bowling_hand`** |
+- Queryable fields in columns (`command_type`, `status`, timestamps, FKs).
+- Full protocol snapshot in `payload` JSONB.
+- Nested protocol fields are **not** normalized into separate tables for MVP.
 
-> **Phase 1C requirement:** The application `PlayerSchema` uses `batting_hand` and `bowling_hand` (`RIGHT`, `LEFT`, `AMBIDEXTROUS`, `UNSPECIFIED`). Database persistence MUST align with this model in Phase 1C. Do not add a `handedness` compatibility alias unless genuinely required.
-> | skill_level | VARCHAR(20) | Optional self-assessment |
-> | preferences | JSONB | UI preferences, defaults |
-> | created_at | TIMESTAMPTZ | |
-> | updated_at | TIMESTAMPTZ | |
+## Telemetry persistence scope
 
-### machines
+- **Persisted:** meaningful samples/events selected by gateway (state changes, delivery milestones, faults).
+- **Transient:** high-frequency live WebSocket streaming (not every packet stored).
 
-Registered bowling machines.
+## Enums (PostgreSQL)
 
-| Column           | Type                | Notes                               |
-| ---------------- | ------------------- | ----------------------------------- |
-| id               | UUID PK             |                                     |
-| name             | VARCHAR(100)        | Human-readable name                 |
-| serial_number    | VARCHAR(50) UNIQUE  | Physical machine identifier         |
-| status           | machine_status ENUM | `ACTIVE`, `INACTIVE`, `MAINTENANCE` |
-| firmware_version | VARCHAR(20)         | Last known firmware version         |
-| last_seen_at     | TIMESTAMPTZ         | Last telemetry timestamp            |
-| config           | JSONB               | Machine-specific configuration      |
-| created_at       | TIMESTAMPTZ         |                                     |
-| updated_at       | TIMESTAMPTZ         |                                     |
-| deleted_at       | TIMESTAMPTZ         | Soft delete                         |
+Aligned with `packages/api-contracts`: `user_role`, `hand_preference`, `ball_type`, `machine_registry_status`, `machine_kind`, `session_status`, `delivery_status`, `machine_command_type`, `machine_command_status`, `fault_severity`, `machine_fault_code`, `calibration_profile_status`, `firmware_release_status`.
 
-### machine_registrations
+## Indexes
 
-Links machines to QR codes and network identity.
+| Table                   | Index                                            | Purpose             |
+| ----------------------- | ------------------------------------------------ | ------------------- |
+| `practice_sessions`     | `(user_id, started_at)`                          | Player history      |
+| `deliveries`            | `(session_id, sequence_number)` UNIQUE           | Ordered deliveries  |
+| `machine_commands`      | `(machine_id)`, `(issued_at)`                    | Command lookup      |
+| `telemetry_samples`     | `(machine_id, recorded_at)`                      | Time-series queries |
+| `faults`                | `(machine_id, occurred_at)`                      | Fault history       |
+| `calibration_profiles`  | `(machine_id, calibration_type, version)` UNIQUE | Version lookup      |
+| `machine_registrations` | `(qr_code_token)` UNIQUE                         | QR scan             |
 
-| Column            | Type               | Notes                          |
-| ----------------- | ------------------ | ------------------------------ |
-| id                | UUID PK            |                                |
-| machine_id        | UUID FK → machines |                                |
-| qr_code_token     | VARCHAR(64) UNIQUE | Token embedded in QR code      |
-| connection_secret | VARCHAR(128)       | Hashed secret for ESP32 auth   |
-| local_ip          | VARCHAR(45)        | Last known local IP (nullable) |
-| created_at        | TIMESTAMPTZ        |                                |
+## Constraints
 
-### practice_sessions
+- FK referential integrity on all relationships.
+- Unique: `profiles.user_id`, `machines.serial_number`, delivery sequence per session.
+- No database constraints for physical RPM/speed limits (machine/safety validation layers).
 
-A practice session groups multiple deliveries.
+## Migrations
 
-| Column                | Type                | Notes                                        |
-| --------------------- | ------------------- | -------------------------------------------- |
-| id                    | UUID PK             |                                              |
-| user_id               | UUID FK → users     |                                              |
-| machine_id            | UUID FK → machines  |                                              |
-| status                | session_status ENUM | `ACTIVE`, `PAUSED`, `COMPLETED`, `CANCELLED` |
-| started_at            | TIMESTAMPTZ         |                                              |
-| ended_at              | TIMESTAMPTZ         | Nullable                                     |
-| total_balls_planned   | INTEGER             |                                              |
-| total_balls_delivered | INTEGER DEFAULT 0   |                                              |
-| config                | JSONB               | Session-level settings                       |
-| created_at            | TIMESTAMPTZ         |                                              |
+```
+packages/database/drizzle/0000_*.sql
+```
 
-### deliveries
+Commands:
 
-Individual delivery records within a session.
+```bash
+pnpm db:up          # Start PostgreSQL (Docker)
+pnpm db:migrate     # Apply migrations
+pnpm db:seed        # Development seed data
+pnpm db:reset       # Down + up + migrate + seed
+pnpm db:generate    # Generate new migration after schema change
+```
 
-| Column            | Type                        | Notes                                                                             |
-| ----------------- | --------------------------- | --------------------------------------------------------------------------------- |
-| id                | UUID PK                     |                                                                                   |
-| session_id        | UUID FK → practice_sessions |                                                                                   |
-| sequence_number   | INTEGER                     | Order within session                                                              |
-| ui_x              | DECIMAL(5,4)                | Optional; normalized UI coordinate (perspective image space)                      |
-| ui_y              | DECIMAL(5,4)                | Optional; normalized UI coordinate (perspective image space)                      |
-| target_x          | DECIMAL(5,4)                | Normalized pitch target horizontal (0.0–1.0); interactive pitch coordinate system |
-| target_y          | DECIMAL(5,4)                | Normalized pitch target length (0.0–1.0); interactive pitch coordinate system     |
-| desired_speed_kmh | DECIMAL(6,2)                |                                                                                   |
-| ball_type         | ball_type ENUM              |                                                                                   |
-| status            | delivery_status ENUM        | `PENDING`, `EXECUTING`, `COMPLETED`, `FAILED`, `CANCELLED`                        |
-| machine_params    | JSONB                       | Calculated machine parameters (audit)                                             |
-| executed_at       | TIMESTAMPTZ                 | Nullable                                                                          |
-| result            | JSONB                       | Telemetry snapshot at delivery                                                    |
-| created_at        | TIMESTAMPTZ                 |                                                                                   |
+## Seed data (development only)
 
-### calibration_data
+- Simulator machine `SIM-DEV-001`
+- Placeholder calibration profile (no real physics)
+- Dev user `dev-player@example.local` (no Supabase auth — local only)
+- All seed records labeled `simulation: true` where applicable
 
-Per-machine calibration mappings used by the calculation engine.
+## Known limitations
 
-| Column           | Type               | Notes                                    |
-| ---------------- | ------------------ | ---------------------------------------- |
-| id               | UUID PK            |                                          |
-| machine_id       | UUID FK → machines |                                          |
-| calibration_type | VARCHAR(50)        | e.g., `speed_rpm`, `position_trajectory` |
-| data             | JSONB              | Calibration table/mapping data           |
-| version          | INTEGER            | Incremented on update                    |
-| created_by       | UUID FK → users    |                                          |
-| created_at       | TIMESTAMPTZ        |                                          |
-| notes            | TEXT               | Optional description                     |
-
-### saved_practice_plans
-
-Reusable delivery sequences saved by players.
-
-| Column      | Type            | Notes                     |
-| ----------- | --------------- | ------------------------- |
-| id          | UUID PK         |                           |
-| user_id     | UUID FK → users |                           |
-| name        | VARCHAR(100)    |                           |
-| description | TEXT            | Optional                  |
-| deliveries  | JSONB           | Array of delivery configs |
-| created_at  | TIMESTAMPTZ     |                           |
-| updated_at  | TIMESTAMPTZ     |                           |
-
-### audit_logs
-
-Security and admin audit trail.
-
-| Column        | Type            | Notes                                          |
-| ------------- | --------------- | ---------------------------------------------- |
-| id            | UUID PK         |                                                |
-| user_id       | UUID FK → users | Nullable (system events)                       |
-| action        | VARCHAR(100)    | e.g., `machine.register`, `calibration.update` |
-| resource_type | VARCHAR(50)     |                                                |
-| resource_id   | UUID            |                                                |
-| details       | JSONB           |                                                |
-| ip_address    | VARCHAR(45)     |                                                |
-| created_at    | TIMESTAMPTZ     |                                                |
-
-## Enums
-
-### user_role
-
-`PLAYER`, `ADMIN`
-
-### ball_type
-
-`FAST`, `MEDIUM`, `SLOW`, `BOUNCER`, `YORKER`, `FULL`, `INSWING`, `OUTSWING`, `LEG_SPIN`, `OFF_SPIN`
-
-New values added via migration. Application code uses the enum from `packages/api-contracts`.
-
-### machine_status
-
-`ACTIVE`, `INACTIVE`, `MAINTENANCE`
-
-### session_status
-
-`ACTIVE`, `PAUSED`, `COMPLETED`, `CANCELLED`
-
-### delivery_status
-
-`PENDING`, `EXECUTING`, `COMPLETED`, `FAILED`, `CANCELLED`
-
-## Indexes (Planned)
-
-| Table                 | Index                          | Purpose                |
-| --------------------- | ------------------------------ | ---------------------- |
-| practice_sessions     | (user_id, started_at DESC)     | History queries        |
-| deliveries            | (session_id, sequence_number)  | Session delivery order |
-| calibration_data      | (machine_id, calibration_type) | Engine lookups         |
-| machine_registrations | (qr_code_token)                | QR scan lookup         |
-| audit_logs            | (created_at DESC)              | Audit queries          |
+- Actuator position units unresolved in DB (UD-02) — numeric JSONB only.
+- IMU orientation unit unresolved (UD-12a).
+- Dev seed user is not linked to Supabase Auth (Phase 1D).
+- No row-level security policies yet (backend enforces access in Phase 1D+).
 
 ## Related Documents
 
-- [Backend Architecture](../backend/BACKEND_ARCHITECTURE.md)
 - [Player Account Architecture](../architecture/PLAYER_ACCOUNT_ARCHITECTURE.md)
 - [Calibration System](../calibration/CALIBRATION_SYSTEM.md)
+- [API Specification](../api/API_SPECIFICATION.md)

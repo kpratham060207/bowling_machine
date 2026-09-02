@@ -44,7 +44,7 @@ These relationships cannot be computed from first principles without extensive p
 
 ### Backend (PostgreSQL)
 
-`calibration_data` table stores versioned calibration records per machine (see [Database Design](../database/DATABASE_DESIGN.md)).
+`calibration_profiles` table stores versioned calibration records per machine (see [Database Design](../database/DATABASE_DESIGN.md)).
 
 ### ESP32 (NVS)
 

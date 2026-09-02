@@ -71,6 +71,8 @@ cd bowling_machine
 pnpm install
 cp .env.example .env
 pnpm db:up          # Start PostgreSQL (Docker)
+pnpm db:migrate     # Apply database migrations
+pnpm db:seed        # Development seed data
 pnpm dev            # Web :3000 + app placeholders
 ```
 
@@ -90,12 +92,14 @@ Full guide: [Local Development](docs/deployment/LOCAL_DEVELOPMENT.md)
 | `pnpm test`         | Vitest unit/smoke tests             |
 | `pnpm test:e2e`     | Playwright smoke tests              |
 | `pnpm db:up`        | Start PostgreSQL container          |
+| `pnpm db:migrate`   | Apply Drizzle migrations            |
+| `pnpm db:seed`      | Seed development data               |
+| `pnpm db:reset`     | Reset DB + migrate + seed           |
 | `pnpm db:down`      | Stop PostgreSQL container           |
 
 ## What Is NOT Implemented
 
-- Authentication (Supabase)
-- Database schema / migrations
+- Authentication (Supabase integration — Phase 1D)
 - REST API routes / WebSocket protocol
 - ESP32 simulator logic
 - Throw Ball pitch UI

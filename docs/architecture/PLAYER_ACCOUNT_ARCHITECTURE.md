@@ -1,6 +1,6 @@
 # Player Account Architecture
 
-> **Status:** Designed (not implemented)
+> **Status:** Designed (database implemented Phase 1C; auth flow not implemented)
 > **Last updated:** 2026-09-02
 
 ## Overview

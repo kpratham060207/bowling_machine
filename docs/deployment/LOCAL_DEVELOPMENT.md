@@ -1,6 +1,6 @@
 # Local Development
 
-> **Phase:** 1A foundation
+> **Phase:** 1C — database persistence implemented
 
 ## Prerequisites
 
@@ -26,9 +26,21 @@ Edit `.env` if you need non-default values. Never commit `.env`.
 
 ## PostgreSQL (Docker Compose)
 
-Phase 1A provides PostgreSQL only — applications do not connect yet.
+### Start, migrate, and seed
 
-### Start
+```bash
+pnpm db:up          # Start PostgreSQL container
+pnpm db:migrate     # Apply Drizzle migrations
+pnpm db:seed        # Insert development seed data (simulation only)
+```
+
+Full reset (destroys container volume state on down):
+
+```bash
+pnpm db:reset       # down + up + migrate + seed
+```
+
+### Start only
 
 ```bash
 pnpm db:up
