@@ -1,7 +1,7 @@
 # Frontend Architecture
 
-> **Status:** Phase 1H-B interactive pitch implemented; see `PHASE_1H-B.md`
-> **Last updated:** 2026-09-02 (finalized pitch-selection UX)
+> **Status:** Phase 1I product hardening complete; see `PHASE_1I.md`  
+> **Last updated:** 2026-09-03
 
 ## Overview
 
