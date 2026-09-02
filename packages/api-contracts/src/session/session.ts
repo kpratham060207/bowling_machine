@@ -14,6 +14,10 @@ export const PracticeSessionSchema = z.object({
   ended_at: TimestampSchema.nullable().optional(),
   total_balls_planned: z.number().int().nonnegative(),
   total_balls_delivered: z.number().int().nonnegative(),
+  /** Human-readable machine name when available from backend join. */
+  machine_name: z.string().optional(),
+  /** Plan that seeded this session — snapshot only; plan edits do not mutate this session. */
+  source_plan_id: EntityIdSchema.optional(),
 });
 
 export const SessionSummarySchema = z.object({

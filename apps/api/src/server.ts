@@ -15,6 +15,7 @@ import { registerHealthRoutes } from './routes/health.routes.js';
 import { registerAuthRoutes } from './routes/auth.routes.js';
 import { registerProfileRoutes } from './routes/profile.routes.js';
 import { registerAdminRoutes } from './routes/admin.routes.js';
+import { registerPracticePlanRoutes } from './routes/practice-plan.routes.js';
 import { registerMachineRoutes } from './routes/machine.routes.js';
 import { registerSessionRoutes } from './routes/session.routes.js';
 import { registerWsTicketRoutes } from './routes/ws-ticket.routes.js';
@@ -23,6 +24,8 @@ import { DefaultMachineGateway } from './gateway/machine-gateway.js';
 import { MachineService } from './services/machine.service.js';
 import { MachineCommandService } from './services/machine-command.service.js';
 import { SessionService } from './services/session.service.js';
+import { PracticePlanService } from './services/practice-plan.service.js';
+import { CalibrationAdminService } from './services/calibration-admin.service.js';
 import { OrchestrationEventPublisher } from './services/orchestration-event-publisher.js';
 import { DeliveryOrchestrationService } from './services/delivery-orchestration.service.js';
 import { DeliveryExecutionTracker } from './services/delivery-execution-tracker.js';
@@ -52,6 +55,8 @@ export async function buildApiServer(env: ApiEnv) {
     env.MACHINE_COMMAND_ACK_TIMEOUT_MS,
   );
   const sessionService = new SessionService(db);
+  const practicePlanService = new PracticePlanService(db);
+  const calibrationAdminService = new CalibrationAdminService(db);
   const orchestrationEventPublisher = new OrchestrationEventPublisher(eventBus);
   const deliveryOrchestration = new DeliveryOrchestrationService(
     db,
@@ -109,12 +114,18 @@ export async function buildApiServer(env: ApiEnv) {
         deliveryOrchestration,
         eventPublisher: orchestrationEventPublisher,
       });
+      registerPracticePlanRoutes(playerRoutes, {
+        db,
+        practicePlanService,
+        sessionService,
+        eventPublisher: orchestrationEventPublisher,
+      });
     });
 
     await protectedApi.register((adminRoutes) => {
       adminRoutes.addHook('onRequest', requireAuthenticationHook);
       adminRoutes.addHook('onRequest', requireAdminHook);
-      registerAdminRoutes(adminRoutes);
+      registerAdminRoutes(adminRoutes, { db, calibrationAdminService });
     });
   });
 

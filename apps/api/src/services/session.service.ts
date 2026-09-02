@@ -3,7 +3,7 @@ import { and, desc, eq, sql } from 'drizzle-orm';
 import type { PracticeSession as PracticeSessionContract } from '@bowling-machine/api-contracts';
 import type { CreateSessionDeliveryInput } from '@bowling-machine/api-contracts';
 import type { Database } from '@bowling-machine/database';
-import { deliveries, practiceSessions } from '@bowling-machine/database';
+import { deliveries, machines, practiceSessions } from '@bowling-machine/database';
 import { ApiHttpError } from '../errors/http-errors.js';
 import { nowIso } from '../lib/machine-crypto.js';
 import { assertSessionOwnership } from './ownership.service.js';
@@ -20,6 +20,8 @@ export class SessionService {
     userId: string;
     machineId: string;
     deliveryInputs?: CreateSessionDeliveryInput[];
+    /** Snapshot reference when session was created from a practice plan. */
+    sourcePlanId?: string;
   }): Promise<PracticeSessionContract> {
     const totalBallsPlanned =
       input.deliveryInputs?.reduce((sum, delivery) => sum + delivery.number_of_balls, 0) ?? 0;
@@ -36,6 +38,9 @@ export class SessionService {
         startedAt,
         totalBallsPlanned,
         totalBallsDelivered: 0,
+        config: input.sourcePlanId
+          ? { source_plan_id: input.sourcePlanId, snapshot_at: startedAt }
+          : undefined,
       });
 
       if (input.deliveryInputs?.length) {
@@ -160,16 +165,26 @@ export class SessionService {
     userId: string,
   ): Promise<PracticeSessionContract> {
     const session = await this.getSessionRow(sessionId);
+    const machineRows = await this.db
+      .select({ name: machines.name })
+      .from(machines)
+      .where(eq(machines.id, session.machineId))
+      .limit(1);
+
     const deliveryRows = await this.db
       .select()
       .from(deliveries)
       .where(eq(deliveries.sessionId, sessionId))
       .orderBy(deliveries.sequenceNumber);
 
+    const config = session.config as { source_plan_id?: string } | null;
+
     return {
       session_id: session.id,
       player_id: userId,
       machine_id: session.machineId,
+      machine_name: machineRows[0]?.name,
+      source_plan_id: config?.source_plan_id,
       status: session.status,
       deliveries: deliveryRows.map(mapDeliveryRowToContract),
       started_at: session.startedAt,

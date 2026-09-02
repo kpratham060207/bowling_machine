@@ -10,6 +10,8 @@ export * from './player/index.js';
 export * from './machine/index.js';
 export * from './delivery/index.js';
 export * from './session/index.js';
+export * from './plan/index.js';
+export * from './calibration/index.js';
 export * from './command/index.js';
 export * from './telemetry/index.js';
 export * from './events/index.js';
