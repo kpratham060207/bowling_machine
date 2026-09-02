@@ -11,10 +11,14 @@ async function signInWithEmail(email: string, password: string): Promise<string 
   return error ? 'Invalid email or password' : null;
 }
 
+type LoginFormProps = {
+  nextPath?: string;
+};
+
 /**
  * Login form — credentials go to Supabase Auth; session stored in HTTP-only cookies via SSR.
  */
-export function LoginForm() {
+export function LoginForm({ nextPath = '/app' }: LoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,53 +38,52 @@ export function LoginForm() {
         return;
       }
 
-      router.push('/profile');
+      router.push(nextPath);
       router.refresh();
     })();
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '0.75rem', maxWidth: '24rem' }}>
-      <label>
-        Email
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <label className="block">
+        <span className="label-text">Email</span>
         <input
           type="email"
+          className="input-field"
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
           }}
           required
           autoComplete="email"
-          style={{ display: 'block', width: '100%', marginTop: '0.25rem' }}
         />
       </label>
-      <label>
-        Password
+      <label className="block">
+        <span className="label-text">Password</span>
         <input
           type="password"
+          className="input-field"
           value={password}
           onChange={(e) => {
             setPassword(e.target.value);
           }}
           required
           autoComplete="current-password"
-          style={{ display: 'block', width: '100%', marginTop: '0.25rem' }}
         />
       </label>
-      {error ? <p style={{ color: 'crimson' }}>{error}</p> : null}
-      <button type="submit" disabled={loading}>
+      {error ? (
+        <p className="text-sm text-red-700" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <button type="submit" className="btn-primary w-full" disabled={loading}>
         {loading ? 'Signing in…' : 'Sign in'}
       </button>
-      <p>
-        No account? <Link href="/register">Create one</Link>
-      </p>
     </form>
   );
 }
 
-/**
- * Registration form — backend provisioning creates application user + profile server-side.
- */
+/** Registration form — backend provisioning creates application user + profile server-side. */
 export function RegisterForm() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -99,11 +102,7 @@ export function RegisterForm() {
       const response = await fetch(`${apiBaseUrl}/api/v1/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          display_name: displayName,
-        }),
+        body: JSON.stringify({ email, password, display_name: displayName }),
       });
 
       if (!response.ok) {
@@ -121,43 +120,44 @@ export function RegisterForm() {
         return;
       }
 
-      router.push('/profile');
+      router.push('/app');
       router.refresh();
     })();
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '0.75rem', maxWidth: '24rem' }}>
-      <label>
-        Display name
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <label className="block">
+        <span className="label-text">Display name</span>
         <input
           type="text"
+          className="input-field"
           value={displayName}
           onChange={(e) => {
             setDisplayName(e.target.value);
           }}
           required
           maxLength={100}
-          style={{ display: 'block', width: '100%', marginTop: '0.25rem' }}
         />
       </label>
-      <label>
-        Email
+      <label className="block">
+        <span className="label-text">Email</span>
         <input
           type="email"
+          className="input-field"
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
           }}
           required
           autoComplete="email"
-          style={{ display: 'block', width: '100%', marginTop: '0.25rem' }}
         />
       </label>
-      <label>
-        Password
+      <label className="block">
+        <span className="label-text">Password</span>
         <input
           type="password"
+          className="input-field"
           value={password}
           onChange={(e) => {
             setPassword(e.target.value);
@@ -165,15 +165,21 @@ export function RegisterForm() {
           required
           minLength={8}
           autoComplete="new-password"
-          style={{ display: 'block', width: '100%', marginTop: '0.25rem' }}
         />
       </label>
-      {error ? <p style={{ color: 'crimson' }}>{error}</p> : null}
-      <button type="submit" disabled={loading}>
+      {error ? (
+        <p className="text-sm text-red-700" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <button type="submit" className="btn-primary w-full" disabled={loading}>
         {loading ? 'Creating account…' : 'Create account'}
       </button>
-      <p>
-        Already have an account? <Link href="/login">Sign in</Link>
+      <p className="text-sm text-slate-600">
+        Already have an account?{' '}
+        <Link href="/login" className="font-medium text-pitch-700 hover:underline">
+          Sign in
+        </Link>
       </p>
     </form>
   );
@@ -195,7 +201,7 @@ export function LogoutButton() {
   }
 
   return (
-    <button type="button" onClick={handleLogout} disabled={loading}>
+    <button type="button" onClick={handleLogout} disabled={loading} className="btn-secondary">
       {loading ? 'Signing out…' : 'Sign out'}
     </button>
   );
