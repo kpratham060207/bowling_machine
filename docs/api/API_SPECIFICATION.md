@@ -1,12 +1,27 @@
 # API Specification
 
-> **Status:** Designed (not implemented)
+> **Status:** Contracts implemented (Phase 1B); REST routes not implemented
 > **Last updated:** 2026-09-02
 > **Base URL:** `/api/v1`
+> **Contract package:** `packages/api-contracts` (Zod schemas + inferred TypeScript types)
 
 ## Overview
 
 REST API served by the Fastify backend. All request/response bodies are JSON. All inputs validated with Zod schemas from `packages/api-contracts`.
+
+### Implemented contract schemas (Phase 1B)
+
+| Domain           | Zod schema               | Export path                      |
+| ---------------- | ------------------------ | -------------------------------- |
+| Player profile   | `PlayerSchema`           | `@bowling-machine/api-contracts` |
+| Delivery request | `DeliveryRequestSchema`  | `@bowling-machine/api-contracts` |
+| Pitch target     | `PitchTargetSchema`      | `@bowling-machine/api-contracts` |
+| Machine status   | `MachineStatusSchema`    | `@bowling-machine/api-contracts` |
+| Practice session | `PracticeSessionSchema`  | `@bowling-machine/api-contracts` |
+| API error        | `ApiErrorResponseSchema` | `@bowling-machine/api-contracts` |
+| WebSocket events | `WebSocketEventSchema`   | `@bowling-machine/api-contracts` |
+
+HTTP route handlers are **not** implemented until a later phase.
 
 ## Authentication
 
@@ -29,15 +44,20 @@ Authorization: Bearer <supabase_jwt>
 
 ### Error
 
+Matches `ApiErrorResponseSchema`:
+
 ```json
 {
   "error": {
     "code": "VALIDATION_ERROR",
     "message": "Human-readable message",
-    "details": [ ... ]
+    "details": {},
+    "request_id": "550e8400-e29b-41d4-a716-446655440000"
   }
 }
 ```
+
+Stable `code` values: `VALIDATION_ERROR`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `MACHINE_UNAVAILABLE`, `MACHINE_NOT_CALIBRATED`, `PROTOCOL_VERSION_UNSUPPORTED`, `INTERNAL_ERROR`.
 
 ## Endpoints
 
@@ -121,15 +141,17 @@ Optional fields for display replay (not used by calculation engine):
 
 ```json
 {
-  "ui_x": 0.55,
-  "ui_y": 0.48
+  "ui": {
+    "ui_x": 0.55,
+    "ui_y": 0.48
+  }
 }
 ```
 
 Validation rules:
 
 - `target_x`, `target_y`: 0.0–1.0 (**normalized pitch target** in interactive pitch coordinate system — produced by Pitch Coordinate Mapper, not raw tap position)
-- `ui_x`, `ui_y`: 0.0–1.0 (optional; normalized UI coordinates for marker replay on visualization)
+- `ui.ui_x`, `ui.ui_y`: 0.0–1.0 (optional; normalized UI coordinates for marker replay on visualization)
 - `desired_speed_kmh`: > 0, upper limit TBD by calibration
 - `ball_type`: enum value
 - `number_of_balls`: 1–50 (configurable max)

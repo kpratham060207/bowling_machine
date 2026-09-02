@@ -1,11 +1,71 @@
 # ESP32 Communication Protocol
 
-> **Status:** Designed (not implemented)
+> **Status:** Domain contracts implemented (Phase 1B); wire codec and gateway not implemented
 > **Last updated:** 2026-09-02
+> **Protocol version:** `1.0` (`PROTOCOL_VERSION` in `packages/api-contracts`)
 
 ## Overview
 
 Defines the communication protocol between the backend (Machine Gateway) and the ESP32 firmware. Transport is WebSocket over local Wi-Fi. All messages are JSON.
+
+## Domain contracts vs wire format
+
+Phase 1B defines **transport-independent domain objects** in `packages/api-contracts`. The Machine Gateway maps between wire envelopes (below) and these schemas:
+
+| Wire `type` (legacy doc) | Domain `command_type` / object | Zod schema                     |
+| ------------------------ | ------------------------------ | ------------------------------ |
+| `command.execute`        | `THROW_SEQUENCE`               | `MachineCommandSchema`         |
+| `command.stop`           | `STOP`                         | `MachineCommandSchema`         |
+| `command.home`           | `HOME`                         | `MachineCommandSchema`         |
+| `config.update`          | `SET_CONFIGURATION`            | `MachineCommandSchema`         |
+| `command.ack`            | —                              | `CommandAcknowledgementSchema` |
+| `telemetry.status`       | —                              | `TelemetrySampleSchema`        |
+| `heartbeat`              | —                              | `MachineHeartbeatSchema`       |
+
+Domain command example (`THROW_SEQUENCE`):
+
+```json
+{
+  "command_id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+  "machine_id": "550e8400-e29b-41d4-a716-446655440000",
+  "protocol_version": "1.0",
+  "command_type": "THROW_SEQUENCE",
+  "issued_at": "2026-09-02T12:00:00.000Z",
+  "expires_at": "2026-09-02T12:00:30.000Z",
+  "payload": {
+    "sequence_id": "6ba7b811-9dad-11d1-80b4-00c04fd430c8",
+    "delivery_count": 6,
+    "parameters": {
+      "wheel1_target_rpm": null,
+      "wheel2_target_rpm": null,
+      "actuator1_target_position": null,
+      "actuator2_target_position": null,
+      "actuator3_target_position": null,
+      "actuator4_target_position": null,
+      "feeder_delay_ms": null,
+      "ball_count": 6,
+      "first_ball_delay_ms": 3000,
+      "interval_ms": 8000
+    }
+  }
+}
+```
+
+Command acknowledgement example:
+
+```json
+{
+  "command_id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+  "machine_id": "550e8400-e29b-41d4-a716-446655440000",
+  "protocol_version": "1.0",
+  "timestamp": "2026-09-02T12:00:01.000Z",
+  "accepted": false,
+  "error_code": "COMMAND_REJECTED",
+  "message": "Machine not in READY state"
+}
+```
+
+Peers with unsupported `protocol_version` MUST reject messages with `PROTOCOL_VERSION_UNSUPPORTED` semantics.
 
 ## Connection
 

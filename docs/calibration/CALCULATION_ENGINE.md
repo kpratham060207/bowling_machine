@@ -75,21 +75,27 @@ See [Remaining Physical Calibration Questions](../architecture/UNRESOLVED_DECISI
 
 ## Engine Interface
 
+Implemented contract types (Phase 1B) in `packages/api-contracts`:
+
+- Input: `DeliveryRequest` (`DeliveryRequestSchema`) — user intent
+- Output: `MachineDeliveryParameters` (`MachineDeliveryParametersSchema`) — machine-level values
+- Command: `MachineCommand` with `command_type: 'THROW_SEQUENCE'` — wire-ready after gateway encoding
+
 ```typescript
-// Designed interface — not yet implemented
+// Designed interface — calculation logic not yet implemented
 
 interface CalculationEngine {
   /**
    * Calculate machine parameters from user delivery request.
    * Uses calibration data specific to the target machine.
    */
-  calculate(request: UserDeliveryRequest, calibration: MachineCalibration): MachineCommand;
+  calculate(request: DeliveryRequest, calibration: MachineCalibration): MachineDeliveryParameters;
 
   /**
    * Validate that a user request is within achievable bounds
    * for this machine's calibration data.
    */
-  validate(request: UserDeliveryRequest, calibration: MachineCalibration): ValidationResult;
+  validate(request: DeliveryRequest, calibration: MachineCalibration): ValidationResult;
 }
 ```
 

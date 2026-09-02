@@ -57,10 +57,12 @@ Player-specific profile data.
 | user_id      | UUID FK → users | UNIQUE                     |
 | display_name | VARCHAR(100)    |                            |
 | handedness   | VARCHAR(10)     | `RIGHT`, `LEFT` (optional) |
-| skill_level  | VARCHAR(20)     | Optional self-assessment   |
-| preferences  | JSONB           | UI preferences, defaults   |
-| created_at   | TIMESTAMPTZ     |                            |
-| updated_at   | TIMESTAMPTZ     |                            |
+
+> **Phase 1B note:** The application `PlayerSchema` in `packages/api-contracts` uses separate `batting_hand` and `bowling_hand` fields (`RIGHT`, `LEFT`, `AMBIDEXTROUS`, `UNSPECIFIED`). Database persistence will map these fields in Phase 1C+ — the single `handedness` column above may be split or migrated.
+> | skill_level | VARCHAR(20) | Optional self-assessment |
+> | preferences | JSONB | UI preferences, defaults |
+> | created_at | TIMESTAMPTZ | |
+> | updated_at | TIMESTAMPTZ | |
 
 ### machines
 

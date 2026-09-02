@@ -1,0 +1,51 @@
+import { z } from 'zod';
+import { EntityIdSchema, TimestampSchema } from '../common/primitives.js';
+import { HandPreferenceSchema } from './role.js';
+
+/**
+ * Player preferences — UI defaults and non-auth configuration.
+ * Kept separate from auth-provider (Supabase) internals.
+ */
+export const PlayerPreferencesSchema = z
+  .object({
+    default_speed_kmh: z.number().positive().optional(),
+    favorite_ball_types: z.array(z.string()).optional(),
+    locale: z.string().optional(),
+  })
+  .passthrough()
+  .describe('Extensible preference bag; unknown keys allowed for forward compatibility');
+
+/**
+ * Application-level Player profile contract.
+ *
+ * Does NOT include passwords, tokens, or Supabase credentials.
+ * Auth identity is linked via `id` (matches Supabase user UUID in persistence layer).
+ *
+ * Note: Database design (Phase 0) used a single `handedness` field; this contract
+ * separates batting_hand and bowling_hand per application requirements.
+ */
+export const PlayerSchema = z.object({
+  id: EntityIdSchema.describe('Application player ID (matches auth user UUID)'),
+  display_name: z
+    .string()
+    .min(1, 'Display name is required')
+    .max(100, 'Display name must be at most 100 characters'),
+  batting_hand: HandPreferenceSchema.describe('Preferred batting hand'),
+  bowling_hand: HandPreferenceSchema.describe('Preferred bowling hand (for context display)'),
+  skill_level: z
+    .string()
+    .max(50)
+    .optional()
+    .describe('Self-assessed skill level — unconstrained until taxonomy defined'),
+  practice_goals: z
+    .array(z.string().max(200))
+    .max(20)
+    .optional()
+    .describe('Player-defined practice goals (free text)'),
+  preferences: PlayerPreferencesSchema.optional(),
+  created_at: TimestampSchema,
+  updated_at: TimestampSchema,
+});
+
+export type Player = z.infer<typeof PlayerSchema>;
+export type PlayerPreferences = z.infer<typeof PlayerPreferencesSchema>;

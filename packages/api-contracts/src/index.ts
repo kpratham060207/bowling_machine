@@ -1,17 +1,16 @@
 /**
  * @bowling-machine/api-contracts
  *
- * PLACEHOLDER — Phase 1A foundation only.
- *
- * This package will hold shared Zod schemas and TypeScript types for:
- * - REST API request/response shapes
- * - WebSocket event payloads
- * - Ball type and machine state enums
- *
- * Do not add business schemas here until Phase 1B (shared application contracts).
+ * Canonical shared contracts for application boundaries and machine protocol.
+ * Zod schemas are the source of truth; TypeScript types are inferred.
  */
 
-/** Monorepo phase marker used by smoke tests to verify package wiring. */
-export const API_CONTRACTS_PLACEHOLDER = 'phase-1a-foundation' as const;
-
-export type ApiContractsPhase = typeof API_CONTRACTS_PLACEHOLDER;
+export * from './common/index.js';
+export * from './player/index.js';
+export * from './machine/index.js';
+export * from './delivery/index.js';
+export * from './session/index.js';
+export * from './command/index.js';
+export * from './telemetry/index.js';
+export * from './events/index.js';
+export * from './errors/index.js';

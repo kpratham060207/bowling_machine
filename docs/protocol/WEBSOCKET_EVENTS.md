@@ -1,11 +1,44 @@
 # WebSocket Events
 
-> **Status:** Designed (not implemented)
+> **Status:** Domain event contracts implemented (Phase 1B); gateway not implemented
 > **Last updated:** 2026-09-02
 
 ## Overview
 
 Real-time communication between the backend and clients (browser and ESP32) uses WebSocket connections. This document defines the event types for the browser WebSocket channel.
+
+## Domain event envelope (Phase 1B)
+
+Typed events are defined in `packages/api-contracts` as `WebSocketEventSchema`. All events share:
+
+| Field        | Type     | Description             |
+| ------------ | -------- | ----------------------- |
+| `event_id`   | UUID     | Unique event instance   |
+| `event_type` | enum     | See event types below   |
+| `timestamp`  | ISO-8601 | When the event occurred |
+| `machine_id` | UUID?    | When machine-scoped     |
+| `session_id` | UUID?    | When session-scoped     |
+| `payload`    | object   | Type-specific payload   |
+
+Event types: `MACHINE_CONNECTED`, `MACHINE_DISCONNECTED`, `MACHINE_STATE_CHANGED`, `COMMAND_ACKNOWLEDGED`, `DELIVERY_STARTED`, `DELIVERY_COMPLETED`, `SESSION_STARTED`, `SESSION_COMPLETED`, `FAULT`, `EMERGENCY_STOP`, `HEARTBEAT`, `STATUS_UPDATED`.
+
+Example (`MACHINE_STATE_CHANGED`):
+
+```json
+{
+  "event_id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+  "event_type": "MACHINE_STATE_CHANGED",
+  "timestamp": "2026-09-02T12:00:00.000Z",
+  "machine_id": "550e8400-e29b-41d4-a716-446655440000",
+  "payload": {
+    "machine_id": "550e8400-e29b-41d4-a716-446655440000",
+    "previous_state": "SPINNING_UP",
+    "new_state": "READY_TO_THROW"
+  }
+}
+```
+
+The gateway maps domain `event_type` values to wire `type` strings (e.g. `machine.state_changed`) when serializing to clients.
 
 ## Browser WebSocket Connection
 

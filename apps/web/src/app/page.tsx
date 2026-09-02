@@ -1,4 +1,4 @@
-import { API_CONTRACTS_PLACEHOLDER } from '@bowling-machine/api-contracts';
+import { PROTOCOL_VERSION } from '@bowling-machine/api-contracts';
 import { SHARED_PLACEHOLDER } from '@bowling-machine/shared';
 import { UI_PLACEHOLDER } from '@bowling-machine/ui';
 
@@ -15,7 +15,7 @@ export default function HomePage() {
         are implemented yet.
       </p>
       <ul>
-        <li>API contracts: {API_CONTRACTS_PLACEHOLDER}</li>
+        <li>Protocol version: {PROTOCOL_VERSION}</li>
         <li>Shared: {SHARED_PLACEHOLDER}</li>
         <li>UI: {UI_PLACEHOLDER}</li>
       </ul>

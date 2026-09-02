@@ -11,7 +11,7 @@
  *
  * Fastify server bootstrap will be added in Phase 1B+.
  */
-import { API_CONTRACTS_PLACEHOLDER } from '@bowling-machine/api-contracts';
+import { PROTOCOL_VERSION } from '@bowling-machine/api-contracts';
 import { DATABASE_PLACEHOLDER } from '@bowling-machine/database';
 import { SHARED_PLACEHOLDER } from '@bowling-machine/shared';
 
@@ -25,7 +25,7 @@ export const API_APP_PLACEHOLDER = 'phase-1a-foundation' as const;
 export function main(): void {
   console.log('[api] placeholder only — no server started');
   console.log('[api] phase:', API_APP_PLACEHOLDER);
-  console.log('[api] contracts:', API_CONTRACTS_PLACEHOLDER);
+  console.log('[api] protocol version:', PROTOCOL_VERSION);
   console.log('[api] database:', DATABASE_PLACEHOLDER);
   console.log('[api] shared:', SHARED_PLACEHOLDER);
 }

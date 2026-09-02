@@ -15,6 +15,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src",
+    "test": "vitest run --config ../../vitest.config.ts src",
     "dev": "tsc -p tsconfig.json --watch"
   },
   "dependencies": {

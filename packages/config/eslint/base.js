@@ -24,6 +24,7 @@ export default tseslint.config(
       'firmware/**',
       'eslint.config.js',
       'packages/config/eslint/**',
+      'apps/web/next-env.d.ts',
     ],
   },
   eslint.configs.recommended,
