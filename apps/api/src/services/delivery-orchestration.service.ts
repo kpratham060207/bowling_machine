@@ -263,7 +263,15 @@ export class DeliveryOrchestrationService {
     };
 
     const machine = await this.machineService.getMachineById(machineId);
-    const calibration = await this.calibrationProvider.resolve(machineId);
+    const calibrationResult = await this.calibrationProvider.resolve(machineId);
+
+    if (!calibrationResult.profile && machine.kind === 'HARDWARE') {
+      throw ApiHttpError.conflict('Calibration unavailable for this machine', {
+        machine_id: machineId,
+      });
+    }
+
+    const calibration = calibrationResult.profile;
     const calibrationData = calibration ? parseSimulationCalibrationData(calibration.data) : null;
 
     const engine =
