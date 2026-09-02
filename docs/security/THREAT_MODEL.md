@@ -32,15 +32,15 @@ Identifies security threats to the bowling machine system and planned mitigation
 
 **Threat:** Attacker sends commands to ESP32 without authentication.
 
-| Mitigation                                       | Layer          |
-| ------------------------------------------------ | -------------- |
-| Machine connection secret required for WebSocket | ESP32 comm     |
-| Command parameter validation and range checks    | ESP32 firmware |
-| State machine rejects commands in wrong state    | ESP32 firmware |
-| Physical E-stop independent of software          | Hardware       |
-| RPM and position limits enforced locally         | ESP32 firmware |
+| Mitigation                                       | Layer          | Status              |
+| ------------------------------------------------ | -------------- | ------------------- |
+| Machine connection secret required for WebSocket | ESP32 comm     | Provisional (UD-21) |
+| Command parameter validation and range checks    | ESP32 firmware | Not implemented     |
+| State machine rejects commands in wrong state    | ESP32 firmware | Not implemented     |
+| Physical E-stop independent of software          | Hardware       | Not tested          |
+| RPM and position limits enforced locally         | ESP32 firmware | Not implemented     |
 
-**Residual risk:** Compromised connection secret allows command submission (within validated ranges).
+**Residual risk:** Compromised connection secret allows command submission (within validated ranges). Machine peer auth semantics not finalized.
 
 ### T2: JWT Theft / Session Hijacking
 
@@ -114,12 +114,18 @@ Identifies security threats to the bowling machine system and planned mitigation
 
 **Threat:** Player data leaked or accessed by unauthorized users.
 
-| Mitigation                            | Layer                 |
-| ------------------------------------- | --------------------- |
-| Players see only own data             | Backend authorization |
-| Admin data access logged              | Audit logs            |
-| Database credentials in env vars only | Configuration         |
-| No secrets in version control         | Git hygiene           |
+| Mitigation                            | Layer                 | Status                                |
+| ------------------------------------- | --------------------- | ------------------------------------- |
+| Players see only own data             | Backend authorization | Phase 1D                              |
+| Admin data access logged              | Audit logs            | Phase 1D+                             |
+| Database credentials in env vars only | Configuration         | Implemented                           |
+| No secrets in version control         | Git hygiene           | Implemented                           |
+| PostgreSQL RLS on player tables       | Database              | **Not implemented (deferred)**        |
+| Browser direct DB access blocked      | Architecture          | Implemented (no client DB connection) |
+
+**Database access model (Phase 1C):** Only the backend service holds `DATABASE_URL`. Player isolation is enforced by backend query filters, not RLS. See [Database Design](../database/DATABASE_DESIGN.md#access-control-and-security-boundary-phase-1c-review).
+
+**Residual risk:** A backend authorization bug could expose cross-player data until RLS is added as defense-in-depth.
 
 ## Security Requirements Summary
 

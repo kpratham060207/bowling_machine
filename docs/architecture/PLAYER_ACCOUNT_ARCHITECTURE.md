@@ -108,14 +108,53 @@ Stored in `profiles` table (see [Database Design](../database/DATABASE_DESIGN.md
 
 Profile data is personal and not shared between users.
 
+## Data ownership and access control
+
+### Player-owned (private)
+
+| Data        | Table(s)                                     | Backend rule                     |
+| ----------- | -------------------------------------------- | -------------------------------- |
+| Profile     | `profiles`                                   | Player reads/writes own row only |
+| Sessions    | `practice_sessions`                          | Player sees own sessions only    |
+| Deliveries  | `deliveries`                                 | Via session ownership            |
+| Saved plans | `practice_plans`, `practice_plan_deliveries` | Player owns own plans            |
+
+### Shared relationship data
+
+| Data                 | Table               | Notes                                       |
+| -------------------- | ------------------- | ------------------------------------------- |
+| Machine access grant | `machine_access`    | Links player to machine; created on connect |
+| Session on machine   | `practice_sessions` | Player-owned; references shared machine     |
+
+### System / machine data (not player-private)
+
+| Data             | Table(s)                            | Access                                              |
+| ---------------- | ----------------------------------- | --------------------------------------------------- |
+| Machine registry | `machines`, `machine_registrations` | Players view connected; ADMIN manages               |
+| Telemetry        | `telemetry_samples`                 | Machine-scoped; associated with session when active |
+| Faults           | `faults`                            | Machine-scoped                                      |
+| Commands         | `machine_commands`                  | Audit trail; backend-scoped queries                 |
+| Calibration      | `calibration_profiles`              | Per-machine; ADMIN writes                           |
+| Firmware         | `firmware_versions`                 | System registry                                     |
+| Audit            | `audit_logs`                        | ADMIN read                                          |
+
+### Authorization boundary (MVP)
+
+- **Supabase Auth** handles login credentials (external).
+- **Backend** enforces JWT validation, role checks, and player data isolation (Phase 1D).
+- **PostgreSQL RLS is NOT implemented** — defense is at the backend API layer only.
+
+See [Database Design](../database/DATABASE_DESIGN.md#access-control-and-security-boundary-phase-1c-review) for full detail and future RLS guidance.
+
 ## Machine Connection Authorization
 
 When a player scans a machine QR code:
 
-1. QR token looked up in `machine_registrations`
-2. Machine must be in `ACTIVE` status
+1. QR token looked up in `machine_registrations` (token only — secret not in QR)
+2. Machine must be in `ACTIVE` registry status
 3. Player must be authenticated (PLAYER or ADMIN)
-4. No exclusive machine locking in MVP (multiple players may view status; only one active session at a time — see [Unresolved Decisions](../architecture/UNRESOLVED_DECISIONS.md))
+4. Backend creates/verifies `machine_access` grant
+5. No exclusive machine locking in MVP for status view; session locking separate (UD-05)
 
 ## Data Privacy
 

@@ -56,11 +56,19 @@ For offline/local operation, the QR code URL must resolve to the local backend. 
 
 ## Security
 
-- QR token is a random 64-character string, not guessable
-- Token maps to a specific machine, not a user
+- QR token is a random opaque string — identifies machine, not a user
+- **QR code must NOT encode connection secrets or credentials** — only `qr_code_token` in URL
 - Scanning QR does not grant access without authentication (player must be logged in)
 - QR token can be rotated by ADMIN (invalidates old QR code)
-- Connection secret (for ESP32 auth) is separate from QR token
+- Machine peer credential (`connection_secret`) is **separate** from QR token and **not** in the QR payload
+
+### Provisional machine peer authentication (Phase 1C)
+
+The `machine_registrations.connection_secret_hash` column stores a **hashed** peer credential for intended ESP32 WebSocket authentication. This is **provisional infrastructure**:
+
+- Plaintext secrets are never stored in the database
+- Final authentication mechanism (header format, rotation, challenge-response) is **not finalized** — see [UD-21](../architecture/UNRESOLVED_DECISIONS.md#ud-21-machine-peer-authentication-semantics)
+- Do not treat the current hash column as the permanent security architecture
 
 ## Machine Registration (Admin Flow)
 

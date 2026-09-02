@@ -1,6 +1,12 @@
 /**
- * QR code and connection credentials for machine discovery.
- * connection_secret stores a hashed value — never plaintext secrets in DB.
+ * Machine registration record — links a machine to its QR discovery token.
+ *
+ * PROVISIONAL (Phase 1C review):
+ * - `qr_code_token` — public identifier encoded in QR URL only (never secrets).
+ * - `connection_secret_hash` — hashed peer credential for intended machine WebSocket
+ *   auth; semantics NOT finalized (see UD-21). Plaintext never stored.
+ *
+ * This table is registration infrastructure, not the final machine auth architecture.
  */
 import { pgTable, uuid, varchar, timestamp, uniqueIndex, index } from 'drizzle-orm/pg-core';
 import { machines } from './machines';

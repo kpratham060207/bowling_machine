@@ -318,6 +318,24 @@ The exact transformation from the **pitch coordinate system** to the **machine's
 
 ---
 
+### UD-21: Machine Peer Authentication Semantics
+
+**Question:** What is the final machine-to-backend authentication mechanism?
+
+**Context:** Phase 1C stores `machine_registrations.connection_secret_hash` as provisional infrastructure for ESP32 WebSocket peer auth. ADR-0005 accepts header-based connection secret in principle, but details are not finalized: header names, rotation policy, challenge-response, simulator vs hardware differences, and relationship to QR token lookup.
+
+**Constraints (fixed):**
+
+- QR code identifies machine via `qr_code_token` only — no secrets in QR
+- Plaintext peer credentials never persisted in database
+- Browser never authenticates as machine peer
+
+**Impact:** ESP32 protocol, machine gateway, `machine_registrations` table usage, threat model T1/T5.
+
+**Status:** UNRESOLVED — table retained as provisional registration model (Phase 1C review decision A)
+
+---
+
 ## Remaining Physical Calibration Questions
 
 These questions cannot be answered until actual machine geometry exists and experimental calibration is performed. They are **intentionally deferred** — not oversights.
