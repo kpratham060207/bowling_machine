@@ -53,23 +53,23 @@ User request
 Structural validation          ← packages/api-contracts (Zod schemas)
     │
     ▼
-Machine capability validation  ← machine configuration / calibration (NOT implemented)
+Machine capability validation  ← calculation engine (simulation bounds)
     │
     ▼
-Calculation                    ← calculation engine (NOT implemented)
+Calculation                    ← packages/calculation-engine (Phase 1F)
     │
     ▼
-Machine safety validation      ← backend safety rules (NOT implemented)
+Machine safety validation      ← calculation engine software layer (Phase 1F)
     │
     ▼
 ESP32 final safety validation  ← firmware authority (NOT implemented)
 ```
 
-| Layer                          | Responsibility                                                                                                       | Implemented             |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| **Structural validation**      | Types, required fields, enum values, normalized coordinate domain (0–1), positive numeric speed, non-negative timing | Phase 1B contracts      |
-| **Machine/system validation**  | Max balls per session, min inter-ball interval, achievable speed/RPM ranges, calibrated parameter bounds             | Phase 1C+ / calibration |
-| **Physical safety validation** | Hard limits, E-stop, stale command rejection, firmware range checks                                                  | ESP32 firmware (future) |
+| Layer                          | Responsibility                                                                                                       | Implemented                 |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| **Structural validation**      | Types, required fields, enum values, normalized coordinate domain (0–1), positive numeric speed, non-negative timing | Phase 1B contracts          |
+| **Machine/system validation**  | Max balls per sequence, min inter-ball interval, achievable speed/RPM ranges (simulation bounds in Phase 1F)         | Phase 1F calculation engine |
+| **Physical safety validation** | Hard limits, E-stop, stale command rejection, firmware range checks                                                  | ESP32 firmware (future)     |
 
 **Important:** A structurally valid `desired_speed_kmh > 0` does **not** mean the speed is physically safe or achievable. Product limits (e.g. max balls, min interval) are **not** encoded in shared contracts unless explicitly established by architecture.
 
@@ -205,6 +205,17 @@ Validation rules (structural — shared contract only):
 - `number_of_balls`: integer >= 1 (structural minimum; max count is machine/system validation)
 - `first_ball_delay_ms`: >= 0
 - `interval_ms`: >= 0 (min safe interval is machine/system validation, not shared contract)
+
+**Calculation semantics (Phase 1F — not yet wired to REST):**
+
+When delivery endpoints are implemented, the backend will invoke `@bowling-machine/calculation-engine` before dispatching `THROW_SEQUENCE`. The engine returns a `CalculationResult` that:
+
+- Preserves the original `DeliveryRequest`
+- Records `calibration.profile_id`, `calibration.version`, and `calibration.simulation`
+- Produces `MachineDeliveryParameters` on success
+- Returns stable error codes (`MISSING_CALIBRATION`, `UNSUPPORTED_CAPABILITY`, etc.) on failure
+
+MVP uses `SIMULATION_CALIBRATION` — calculated RPM and actuator values are **not physically validated**. See [Calculation Engine](../calibration/CALCULATION_ENGINE.md).
 
 Response:
 

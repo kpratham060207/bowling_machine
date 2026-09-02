@@ -55,11 +55,12 @@ apps/
   api/                  # Fastify backend with auth
   esp32-simulator/      # Simulator placeholder
 packages/
-  api-contracts/        # Shared Zod schemas (placeholder)
-  shared/               # Shared utilities (placeholder)
-  database/             # Drizzle (placeholder)
+  api-contracts/        # Shared Zod schemas
+  calculation-engine/   # DeliveryRequest → MachineDeliveryParameters (Phase 1F)
+  shared/               # Shared utilities
+  database/             # Drizzle ORM + migrations
   config/               # Shared TS/ESLint/Prettier configs
-  ui/                   # Shared UI components (placeholder)
+  ui/                   # Shared UI components
 firmware/esp32/         # ESP-IDF placeholder
 docs/                   # Architecture documentation
 tests/                  # Smoke tests

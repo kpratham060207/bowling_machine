@@ -1,6 +1,6 @@
 # Calibration System
 
-> **Status:** Designed (not implemented)
+> **Status:** Schema designed; SIMULATION_CALIBRATION implemented (Phase 1F)
 > **Last updated:** 2026-09-02
 
 ## Overview
@@ -87,13 +87,24 @@ The web app provides a calibration interface:
 
 ## Initial Development Strategy
 
-Until physical hardware is available:
+Until physical hardware calibration is available:
 
-1. Use ESP32 simulator with synthetic calibration data
-2. Define calibration data schema and storage
-3. Build calculation engine with placeholder mappings
-4. Develop calibration UI with mock data
-5. Replace with real calibration when hardware is ready
+1. Use ESP32 simulator with **SIMULATION_CALIBRATION** data (`SIMULATION_CALIBRATION_V1` fixture)
+2. Calculation engine (`packages/calculation-engine`) consumes injected calibration via `CalibrationProvider`
+3. Backend loads calibration from `calibration_profiles` table when delivery endpoints are implemented (Phase 1G+)
+4. Replace simulation profiles with experimentally measured data during Phase 4 calibration
+
+### SIMULATION_CALIBRATION (Phase 1F)
+
+| Property          | Value                                      |
+| ----------------- | ------------------------------------------ |
+| Type key          | `SIMULATION_CALIBRATION`                   |
+| Fixture           | `SIMULATION_CALIBRATION_V1`                |
+| Profile ID        | `simulation-calibration-v1-fixture`        |
+| Version           | 1                                          |
+| Physical validity | **None** — software pipeline demonstration |
+
+All numeric values in the fixture are labelled `_simulation: true` and documented in [Calculation Engine](./CALCULATION_ENGINE.md). They must not be treated as RPM limits, actuator ranges, or speed mappings for real hardware.
 
 ## Calibration Versioning
 

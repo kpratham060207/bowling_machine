@@ -1,7 +1,7 @@
 # System Architecture
 
-> **Status:** Designed (not implemented)
-> **Last updated:** 2026-09-02 (finalized pitch-selection pipeline)
+> **Status:** Partially implemented (Phase 1E machine gateway; Phase 1F calculation engine)
+> **Last updated:** 2026-09-02
 
 ## Purpose
 
@@ -98,31 +98,32 @@ See [Pitch Visualization](../frontend/PITCH_VISUALIZATION.md), [QR Connection](.
 
 ## Pitch Target Selection Pipeline
 
-| Stage                            | Owner                      | Output                                          |
-| -------------------------------- | -------------------------- | ----------------------------------------------- |
-| 1. Player tap                    | Frontend                   | Pointer event on pitch visualization            |
-| 2. Normalized UI coordinate      | Frontend                   | `ui_x`, `ui_y` (0.0–1.0, image-relative)        |
-| 3. Pitch Coordinate Mapper       | `packages/shared`          | `target_x`, `target_y` (persisted pitch target) |
-| 4. Trajectory calculation        | Backend calculation engine | Required trajectory (calibration)               |
-| 5. Machine parameter calculation | Backend calculation engine | RPM, actuators, feeder timing (calibration)     |
-| 6. Safety validation             | Backend + ESP32            | Validated command or rejection                  |
-| 7. ESP32 command                 | ESP32 firmware             | Physical execution                              |
+| Stage                            | Owner                         | Output                                             |
+| -------------------------------- | ----------------------------- | -------------------------------------------------- |
+| 1. Player tap                    | Frontend                      | Pointer event on pitch visualization               |
+| 2. Normalized UI coordinate      | Frontend                      | `ui_x`, `ui_y` (0.0–1.0, image-relative)           |
+| 3. Pitch Coordinate Mapper       | `packages/shared`             | `target_x`, `target_y` (persisted pitch target)    |
+| 4. Trajectory calculation        | `packages/calculation-engine` | Trajectory representation (SIMULATION_CALIBRATION) |
+| 5. Machine parameter calculation | `packages/calculation-engine` | RPM, actuators, feeder timing (simulation)         |
+| 6. Safety validation             | Backend + ESP32               | Validated command or rejection                     |
+| 7. ESP32 command                 | ESP32 firmware                | Physical execution                                 |
 
-The frontend stops at stage 3. Stages 4–5 require experimental calibration and must not invent physical constants.
+The frontend stops at stage 3. Stages 4–5 are implemented in `packages/calculation-engine` using **SIMULATION_CALIBRATION** until experimental calibration replaces simulation profiles.
 
 ## Component Inventory
 
-| Component       | Location                 | Purpose                                   |
-| --------------- | ------------------------ | ----------------------------------------- |
-| Web App         | `apps/web`               | Mobile-first player interface             |
-| API Server      | `apps/api`               | REST + WebSocket backend                  |
-| ESP32 Simulator | `apps/esp32-simulator`   | Development without hardware              |
-| API Contracts   | `packages/api-contracts` | Shared types and validation schemas       |
-| Shared          | `packages/shared`        | Pitch Coordinate Mapper, shared utilities |
-| Database        | `packages/database`      | Drizzle schema and migrations             |
-| UI              | `packages/ui`            | Shared React components                   |
-| Config          | `packages/config`        | Shared tooling configuration              |
-| Firmware        | `firmware/esp32`         | Machine controller firmware               |
+| Component          | Location                      | Purpose                                     |
+| ------------------ | ----------------------------- | ------------------------------------------- |
+| Web App            | `apps/web`                    | Mobile-first player interface               |
+| API Server         | `apps/api`                    | REST + WebSocket backend                    |
+| ESP32 Simulator    | `apps/esp32-simulator`        | Development without hardware                |
+| API Contracts      | `packages/api-contracts`      | Shared types and validation schemas         |
+| Calculation Engine | `packages/calculation-engine` | DeliveryRequest → MachineDeliveryParameters |
+| Shared             | `packages/shared`             | Pitch Coordinate Mapper, shared utilities   |
+| Database           | `packages/database`           | Drizzle schema and migrations               |
+| UI                 | `packages/ui`                 | Shared React components                     |
+| Config             | `packages/config`             | Shared tooling configuration                |
+| Firmware           | `firmware/esp32`              | Machine controller firmware                 |
 
 ## Data Flow: Delivery Request
 
