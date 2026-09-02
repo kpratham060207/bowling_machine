@@ -5,7 +5,7 @@
 
 ## Overview
 
-A practice session represents a period of batting practice where a player configures and executes one or more delivery sequences on a connected machine.
+A practice session represents a period of batting practice where a player configures delivery sequences. **Machine connection is optional for configuration and calculation** — see [Machine-Optional Mode](./MACHINE_OPTIONAL_MODE.md). Physical execution requires a connected machine with control.
 
 ## Session Lifecycle
 

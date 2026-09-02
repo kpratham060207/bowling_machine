@@ -36,6 +36,8 @@ Edit `.env` if you need non-default values. Never commit `.env`.
 
 See [Authentication](../security/AUTHENTICATION.md) for full setup detail.
 
+Machine connection is **optional** for configuration and calculation — see [Machine-Optional Mode](../architecture/MACHINE_OPTIONAL_MODE.md).
+
 ## PostgreSQL (Docker Compose)
 
 ### Start, migrate, and seed
@@ -112,12 +114,12 @@ pnpm test:e2e     # Playwright smoke
 
 ## Application URLs (Phase 1D)
 
-| Service    | URL                   | Status                             |
-| ---------- | --------------------- | ---------------------------------- |
-| Web        | http://localhost:3000 | Auth UI (login, register, profile) |
-| API        | http://localhost:4000 | Fastify + auth/profile routes      |
-| Simulator  | —                     | No WebSocket server yet            |
-| PostgreSQL | localhost:5432        | Docker container                   |
+| Service    | URL                   | Status                                    |
+| ---------- | --------------------- | ----------------------------------------- |
+| Web        | http://localhost:3000 | Auth UI + machine-optional practice setup |
+| API        | http://localhost:4000 | Fastify + auth/profile/calculation routes |
+| Simulator  | —                     | No WebSocket server yet                   |
+| PostgreSQL | localhost:5432        | Docker container                          |
 
 ## Related docs
 
