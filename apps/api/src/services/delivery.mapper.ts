@@ -34,6 +34,7 @@ export function mapDeliveryRowToContract(row: DeliveryRow): Delivery {
       : null,
     command_id: row.machineCommandId,
     status: row.status,
+    calibration_profile_id: row.calibrationProfileId ?? null,
     error: row.error
       ? {
           fault_code: row.error.fault_code as 'UNKNOWN',

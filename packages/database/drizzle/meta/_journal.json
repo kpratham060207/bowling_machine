@@ -15,6 +15,13 @@
       "when": 1788362239000,
       "tag": "0001_machine_control_locks",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788362240000,
+      "tag": "0002_delivery_calibration_profile",
+      "breakpoints": true
     }
   ]
 }

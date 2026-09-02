@@ -1,5 +1,8 @@
 import { and, desc, eq, max } from 'drizzle-orm';
-import { parseSimulationCalibrationData } from '@bowling-machine/calculation-engine';
+import {
+  parseSimulationCalibrationData,
+  validateCalibrationForActivation,
+} from '@bowling-machine/calculation-engine';
 import type {
   CalibrationProfileDetail,
   CalibrationProfileSummary,
@@ -7,10 +10,11 @@ import type {
   UpdateCalibrationProfileRequest,
 } from '@bowling-machine/api-contracts';
 import type { Database } from '@bowling-machine/database';
-import { calibrationProfiles } from '@bowling-machine/database';
+import { calibrationProfiles, machines } from '@bowling-machine/database';
 import { ApiHttpError } from '../errors/http-errors.js';
 import { nowIso } from '../lib/machine-crypto.js';
 import { writeAuditEvent } from './audit.service.js';
+import type { MachineConfigurationService } from './machine-configuration.service.js';
 
 function isSimulationData(data: Record<string, unknown>): boolean {
   return data['_simulation'] === true || parseSimulationCalibrationData(data) !== null;
@@ -33,12 +37,21 @@ function mapProfileSummary(
   };
 }
 
+type CalibrationAdminDeps = {
+  db: Database['db'];
+  machineConfigurationService?: MachineConfigurationService;
+};
+
 /**
  * ADMIN calibration profile management — versioned machine-specific configuration.
- * Changes are audited; activation is explicit and does not bypass safety validation.
+ * Activation validates completeness; connected peers receive SET_CONFIGURATION push.
  */
 export class CalibrationAdminService {
-  constructor(private readonly db: Database['db']) {}
+  constructor(private readonly deps: CalibrationAdminDeps) {}
+
+  private get db(): Database['db'] {
+    return this.deps.db;
+  }
 
   async listProfilesForMachine(machineId: string): Promise<CalibrationProfileSummary[]> {
     const rows = await this.db
@@ -130,18 +143,29 @@ export class CalibrationAdminService {
     return { ...mapProfileSummary(row), data: row.data };
   }
 
-  /** Activates a profile and archives other ACTIVE profiles of the same machine + type. */
-  async activateProfile(adminUserId: string, profileId: string): Promise<CalibrationProfileDetail> {
+  /** Activates a profile after validation; pushes SET_CONFIGURATION when peer is connected. */
+  async activateProfile(
+    adminUserId: string,
+    profileId: string,
+  ): Promise<
+    CalibrationProfileDetail & { configuration_push?: { pushed: boolean; message: string } }
+  > {
     const profile = await this.getProfileRow(profileId);
 
-    if (!isSimulationData(profile.data) && profile.data['_simulation'] !== true) {
-      // Non-simulation profiles must parse as valid simulation structure for MVP engine,
-      // or will fail calculation until production calibration format is defined.
-      if (!parseSimulationCalibrationData(profile.data)) {
-        throw ApiHttpError.validation(
-          'Calibration data is not valid — simulation profiles require _simulation: true and required fields',
-        );
-      }
+    const machineRows = await this.db
+      .select({ kind: machines.kind })
+      .from(machines)
+      .where(eq(machines.id, profile.machineId))
+      .limit(1);
+
+    const machineKind = machineRows[0]?.kind ?? 'SIMULATOR';
+    const validation = validateCalibrationForActivation(profile.data, machineKind);
+
+    if (!validation.valid) {
+      throw ApiHttpError.validation('Calibration profile cannot be activated', {
+        errors: validation.errors,
+        machine_kind: machineKind,
+      });
     }
 
     await this.db.transaction(async (tx) => {
@@ -171,11 +195,27 @@ export class CalibrationAdminService {
         machine_id: profile.machineId,
         calibration_type: profile.calibrationType,
         version: profile.version,
-        is_simulation: isSimulationData(profile.data),
+        is_simulation: validation.is_simulation,
+        is_hardware: validation.is_hardware,
       },
     });
 
-    return this.getProfile(profileId);
+    let configuration_push: { pushed: boolean; message: string } | undefined;
+    if (this.deps.machineConfigurationService) {
+      configuration_push = await this.deps.machineConfigurationService.pushCalibrationProfile(
+        profile.machineId,
+        {
+          calibration_type: profile.calibrationType,
+          version: profile.version,
+          data: profile.data,
+        },
+      );
+    }
+
+    return {
+      ...(await this.getProfile(profileId)),
+      configuration_push,
+    };
   }
 
   private async getProfileRow(profileId: string): Promise<typeof calibrationProfiles.$inferSelect> {

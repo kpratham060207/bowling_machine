@@ -10,7 +10,7 @@ import {
   createDefaultBallTypeRegistry,
   createSimulationCalculationEngine,
   DeliveryCalculationEngine,
-  parseSimulationCalibrationData,
+  resolveEngineCalibrationData,
   SimulationPitchCoordinateMapper,
   StaticCalibrationProvider,
 } from '@bowling-machine/calculation-engine';
@@ -272,7 +272,7 @@ export class DeliveryOrchestrationService {
     }
 
     const calibration = calibrationResult.profile;
-    const calibrationData = calibration ? parseSimulationCalibrationData(calibration.data) : null;
+    const calibrationData = calibration ? resolveEngineCalibrationData(calibration.data) : null;
 
     const engine =
       calibration !== null
@@ -318,7 +318,12 @@ export class DeliveryOrchestrationService {
 
     await this.db
       .update(deliveries)
-      .set({ calculatedParameters: calculatedJson })
+      .set({
+        calculatedParameters: calculatedJson,
+        calibrationProfileId: calibrationResult.is_simulation_fallback
+          ? null
+          : (calibration?.profile_id ?? null),
+      })
       .where(eq(deliveries.id, row.id));
 
     const throwCommand = this.commandService.buildCommand(

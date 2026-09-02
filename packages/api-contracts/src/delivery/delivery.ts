@@ -38,6 +38,8 @@ export const DeliverySchema = z.object({
   status: DeliveryStatusSchema,
   error: MachineFaultSchema.nullable().optional(),
   measured: DeliveryMeasuredValuesSchema,
+  /** Calibration profile used at calculation time — preserved for debugging and future AI linkage. */
+  calibration_profile_id: EntityIdSchema.nullable().optional(),
   created_at: TimestampSchema,
   executed_at: TimestampSchema.nullable().optional(),
 });

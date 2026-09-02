@@ -96,6 +96,8 @@ export const machineFaultCodeEnum = pgEnum('machine_fault_code', [
   'IMU_FAILURE',
   'POWER_FAULT',
   'UNCALIBRATED',
+  'WATCHDOG_TIMEOUT',
+  'COMMUNICATION_FAULT',
   'UNKNOWN',
 ]);
 

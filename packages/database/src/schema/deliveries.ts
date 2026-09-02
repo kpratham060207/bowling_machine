@@ -44,6 +44,7 @@ import {
 import { ballTypeEnum, deliveryStatusEnum } from './enums';
 import { practiceSessions } from './practice-sessions';
 import { machineCommands } from './machine-commands';
+import { calibrationProfiles } from './calibration-profiles';
 
 export const deliveries = pgTable(
   'deliveries',
@@ -63,6 +64,10 @@ export const deliveries = pgTable(
     firstBallDelayMs: integer('first_ball_delay_ms').notNull().default(0),
     intervalMs: integer('interval_ms').notNull().default(0),
     calculatedParameters: jsonb('calculated_parameters').$type<CalculatedParametersJson>(),
+    /** Calibration profile used at calculation time — immutable after delivery completes. */
+    calibrationProfileId: uuid('calibration_profile_id').references(() => calibrationProfiles.id, {
+      onDelete: 'set null',
+    }),
     status: deliveryStatusEnum('status').notNull().default('PENDING'),
     machineCommandId: uuid('machine_command_id').references(() => machineCommands.id, {
       onDelete: 'set null',

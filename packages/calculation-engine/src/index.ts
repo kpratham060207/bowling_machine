@@ -7,6 +7,8 @@ export * from './types/machine-config.js';
 export * from './pitch-mapper/types.js';
 export * from './pitch-mapper/simulation-pitch-mapper.js';
 export * from './calibration/types.js';
+export * from './calibration/hardware-types.js';
+export * from './calibration/validation.js';
 export * from './ball-type/ball-type-strategy.js';
 export * from './ball-type/ball-type-registry.js';
 export * from './validation/structural-validator.js';

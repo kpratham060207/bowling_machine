@@ -3,11 +3,8 @@ import type { MachineDeliveryParameters } from '@bowling-machine/api-contracts';
 import type { BallTypeStrategyRegistry } from '../ball-type/ball-type-registry.js';
 import { createDefaultBallTypeRegistry } from '../ball-type/ball-type-registry.js';
 import type { CalibrationProvider } from '../calibration/types.js';
-import {
-  parseSimulationCalibrationData,
-  StaticCalibrationProvider,
-  type SimulationCalibrationData,
-} from '../calibration/types.js';
+import { resolveEngineCalibrationData } from '../calibration/validation.js';
+import { StaticCalibrationProvider, type SimulationCalibrationData } from '../calibration/types.js';
 import { calculationError } from '../errors/calculation-error.js';
 import { SIMULATION_CALIBRATION_V1_PROFILE } from '../fixtures/simulation-calibration-v1.js';
 import type { PitchCoordinateMapper } from '../pitch-mapper/types.js';
@@ -76,7 +73,7 @@ export class DeliveryCalculationEngine {
       });
     }
 
-    const calibrationData = parseSimulationCalibrationData(calibrationProfile.data);
+    const calibrationData = resolveEngineCalibrationData(calibrationProfile.data);
     if (!calibrationData) {
       return failedResult({
         request,
