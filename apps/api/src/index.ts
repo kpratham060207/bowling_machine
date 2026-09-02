@@ -1,34 +1,36 @@
 /**
- * @bowling-machine/api — application entry point
+ * @bowling-machine/api — Fastify backend with Supabase Auth integration.
  *
- * PLACEHOLDER — Phase 1A foundation only.
- *
- * This file verifies workspace package wiring. It does NOT:
- * - Start an HTTP server
- * - Implement authentication
- * - Connect to PostgreSQL
- * - Handle machine protocol / WebSocket traffic
- *
- * Fastify server bootstrap will be added in Phase 1B+.
+ * Phase 1D: authentication middleware, authorization helpers, profile routes.
+ * Machine protocol, simulator, and calculation engine are intentionally not implemented.
  */
-import { PROTOCOL_VERSION } from '@bowling-machine/api-contracts';
-import { schema } from '@bowling-machine/database';
-import { SHARED_PLACEHOLDER } from '@bowling-machine/shared';
+import { loadApiEnv } from './config/env.js';
+import { startApiServer } from './server.js';
 
-/** Phase marker logged when running `pnpm --filter @bowling-machine/api dev`. */
-export const API_APP_PLACEHOLDER = 'phase-1a-foundation' as const;
+export { buildApiServer, startApiServer } from './server.js';
+export type { ApiServer } from './server.js';
+export { JwtVerifier } from './lib/jwt.js';
+export { ApiHttpError } from './errors/http-errors.js';
+export { getAuthContext, extractBearerToken, createAuthenticationHook } from './auth/middleware.js';
+export {
+  requireAuthentication,
+  requirePlayer,
+  requireAdmin,
+  rejectClientOwnershipFields,
+} from './auth/authorization.js';
+export {
+  assertSessionOwnership,
+  assertDeliveryOwnership,
+  assertPlanOwnership,
+  assertProfileOwnershipByUserId,
+} from './services/ownership.service.js';
 
-/**
- * Minimal bootstrap used by the dev script to confirm the app package resolves.
- * Not a production server — intentionally side-effect free beyond this log.
- */
-export function main(): void {
-  console.log('[api] placeholder only — no server started');
-  console.log('[api] phase:', API_APP_PLACEHOLDER);
-  console.log('[api] protocol version:', PROTOCOL_VERSION);
-  console.log('[api] database tables:', Object.keys(schema).length);
-  console.log('[api] shared:', SHARED_PLACEHOLDER);
+async function main(): Promise<void> {
+  const env = loadApiEnv();
+  await startApiServer(env);
 }
 
-// Execute when run directly via tsx (development placeholder).
-main();
+main().catch((error: unknown) => {
+  console.error('[api] failed to start:', error);
+  process.exit(1);
+});

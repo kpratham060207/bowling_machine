@@ -1,6 +1,6 @@
 # Player Account Architecture
 
-> **Status:** Designed (database implemented Phase 1C; auth flow not implemented)
+> **Status:** Implemented (Phase 1D)
 > **Last updated:** 2026-09-02
 
 ## Overview
@@ -62,18 +62,23 @@ System-level administrative role. Assigned manually (not self-service).
 
 ### Registration
 
-1. Player submits email + password on `/register`
-2. Supabase Auth creates auth user
-3. Backend webhook or post-registration hook creates `users` row with role `PLAYER`
-4. Backend creates empty `profiles` row
-5. Player redirected to profile setup or machine connection
+1. Player submits email + password + display name on `/register`
+2. Frontend calls backend `POST /api/v1/auth/register`
+3. Backend creates Supabase Auth user (service role — server only)
+4. Backend creates `users` row with role `PLAYER` and `profiles` row
+5. If provisioning fails, auth user is rolled back
+6. Frontend signs in via Supabase client; session stored in HTTP-only cookies
 
 ### Login
 
 1. Player submits credentials on `/login`
-2. Supabase Auth validates and returns JWT + refresh token
-3. Frontend stores session via Supabase client SDK
-4. All subsequent API calls include JWT in Authorization header
+2. Supabase Auth validates and returns session
+3. Frontend stores session in cookies via `@supabase/ssr` (not localStorage)
+4. API calls include `Authorization: Bearer <access_token>`
+
+### Session restoration
+
+Next.js middleware refreshes Supabase session cookies on each request. Server Components read session via `@/lib/supabase/server`.
 
 ### Authorization
 
@@ -141,7 +146,7 @@ Profile data is personal and not shared between users.
 ### Authorization boundary (MVP)
 
 - **Supabase Auth** handles login credentials (external).
-- **Backend** enforces JWT validation, role checks, and player data isolation (Phase 1D).
+- **Backend** enforces JWT validation, role checks, and player data isolation (**Implemented Phase 1D**).
 - **PostgreSQL RLS is NOT implemented** — defense is at the backend API layer only.
 
 See [Database Design](../database/DATABASE_DESIGN.md#access-control-and-security-boundary-phase-1c-review) for full detail and future RLS guidance.

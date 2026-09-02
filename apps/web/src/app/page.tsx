@@ -1,24 +1,26 @@
-import { PROTOCOL_VERSION } from '@bowling-machine/api-contracts';
-import { SHARED_PLACEHOLDER } from '@bowling-machine/shared';
-import { UI_PLACEHOLDER } from '@bowling-machine/ui';
+import Link from 'next/link';
+import { getServerSession } from '@/lib/supabase/server';
 
-/**
- * Home page — Phase 1A foundation placeholder.
- * This is NOT the Throw Ball UI or any production feature screen.
- */
-export default function HomePage() {
+/** Home page — routes authenticated players to profile. */
+export default async function HomePage() {
+  const session = await getServerSession();
+
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', padding: '2rem', maxWidth: '40rem' }}>
+    <main>
       <h1>Bowling Machine</h1>
       <p>
-        <strong>Phase 1A:</strong> repository and development foundation. No application features
-        are implemented yet.
+        <strong>Phase 1D:</strong> player authentication and authorization foundation.
       </p>
-      <ul>
-        <li>Protocol version: {PROTOCOL_VERSION}</li>
-        <li>Shared: {SHARED_PLACEHOLDER}</li>
-        <li>UI: {UI_PLACEHOLDER}</li>
-      </ul>
+      {session ? (
+        <p>
+          You are signed in. <Link href="/profile">View your profile</Link>.
+        </p>
+      ) : (
+        <p>
+          <Link href="/login">Sign in</Link> or <Link href="/register">create an account</Link> to
+          continue.
+        </p>
+      )}
     </main>
   );
 }

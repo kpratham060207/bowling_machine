@@ -1,18 +1,20 @@
 import type { Metadata } from 'next';
+import { AppNav } from '@/components/app-nav';
+import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Bowling Machine',
-  description: 'Smart cricket bowling machine — development foundation',
+  description: 'Smart cricket bowling machine — player authentication',
 };
 
-/**
- * Root layout — Phase 1A placeholder only.
- * Feature routes (login, throw ball, sessions) will be added in Phase 1B+.
- */
+/** Root layout with navigation and session-aware chrome. */
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AppNav />
+        {children}
+      </body>
     </html>
   );
 }

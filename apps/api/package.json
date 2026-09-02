@@ -15,7 +15,13 @@
   "dependencies": {
     "@bowling-machine/api-contracts": "workspace:*",
     "@bowling-machine/database": "workspace:*",
-    "@bowling-machine/shared": "workspace:*"
+    "@bowling-machine/shared": "workspace:*",
+    "@fastify/cors": "^11.3.0",
+    "@supabase/supabase-js": "^2.114.0",
+    "drizzle-orm": "^0.38.2",
+    "fastify": "^5.12.1",
+    "jose": "^6.2.10",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@bowling-machine/config": "workspace:*",

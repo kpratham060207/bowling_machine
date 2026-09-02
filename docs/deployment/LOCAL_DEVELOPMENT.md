@@ -1,6 +1,6 @@
 # Local Development
 
-> **Phase:** 1C — database persistence implemented
+> **Phase:** 1D — authentication and authorization implemented
 
 ## Prerequisites
 
@@ -23,6 +23,18 @@ cp .env.example .env
 ```
 
 Edit `.env` if you need non-default values. Never commit `.env`.
+
+### Supabase Auth (required for Phase 1D)
+
+1. Create a Supabase project
+2. Copy values from Project Settings → API into `.env`:
+   - `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_URL` — project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — anon public key (browser-safe)
+   - `SUPABASE_SERVICE_ROLE_KEY` — service role key (**server only**)
+   - `SUPABASE_JWT_SECRET` — JWT secret (**server only**)
+3. Enable Email auth under Authentication → Providers
+
+See [Authentication](../security/AUTHENTICATION.md) for full setup detail.
 
 ## PostgreSQL (Docker Compose)
 
@@ -98,14 +110,14 @@ pnpm test         # Vitest (builds packages first)
 pnpm test:e2e     # Playwright smoke
 ```
 
-## Application URLs (Phase 1A)
+## Application URLs (Phase 1D)
 
-| Service    | URL                   | Status                  |
-| ---------- | --------------------- | ----------------------- |
-| Web        | http://localhost:3000 | Placeholder home page   |
-| API        | —                     | No HTTP server yet      |
-| Simulator  | —                     | No WebSocket server yet |
-| PostgreSQL | localhost:5432        | Docker container        |
+| Service    | URL                   | Status                             |
+| ---------- | --------------------- | ---------------------------------- |
+| Web        | http://localhost:3000 | Auth UI (login, register, profile) |
+| API        | http://localhost:4000 | Fastify + auth/profile routes      |
+| Simulator  | —                     | No WebSocket server yet            |
+| PostgreSQL | localhost:5432        | Docker container                   |
 
 ## Related docs
 

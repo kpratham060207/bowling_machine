@@ -34,7 +34,12 @@ export default tseslint.config(
   {
     languageOptions: {
       parserOptions: {
-        project: ['tsconfig.eslint.json'],
+        project: [
+          'tsconfig.eslint.json',
+          'apps/web/tsconfig.json',
+          'apps/api/tsconfig.json',
+          'apps/esp32-simulator/tsconfig.json',
+        ],
         tsconfigRootDir: repoRoot,
       },
     },
@@ -49,6 +54,20 @@ export default tseslint.config(
         'error',
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
+    },
+  },
+  {
+    // Next.js web app uses Supabase SSR — relax strict unsafe rules where ESLint
+    // project service cannot resolve @supabase/* types across composite configs.
+    files: ['apps/web/**/*.ts', 'apps/web/**/*.tsx'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-redundant-type-constituents': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
     },
   },
 );

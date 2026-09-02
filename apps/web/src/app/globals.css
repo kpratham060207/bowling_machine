@@ -1,0 +1,29 @@
+/** Minimal global styles for Phase 1D auth UI. */
+body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  color: #111;
+  background: #fafafa;
+}
+
+main {
+  padding: 2rem;
+  max-width: 40rem;
+}
+
+input,
+button {
+  font: inherit;
+  padding: 0.5rem 0.75rem;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: #0b57d0;
+}

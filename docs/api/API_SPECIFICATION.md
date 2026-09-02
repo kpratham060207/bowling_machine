@@ -1,6 +1,6 @@
 # API Specification
 
-> **Status:** Contracts implemented (Phase 1B); REST routes not implemented
+> **Status:** Contracts and auth/profile routes implemented (Phase 1D)
 > **Last updated:** 2026-09-02
 > **Base URL:** `/api/v1`
 > **Contract package:** `packages/api-contracts` (Zod schemas + inferred TypeScript types)
@@ -21,7 +21,17 @@ REST API served by the Fastify backend. All request/response bodies are JSON. Al
 | API error        | `ApiErrorResponseSchema` | `@bowling-machine/api-contracts` |
 | WebSocket events | `WebSocketEventSchema`   | `@bowling-machine/api-contracts` |
 
-HTTP route handlers are **not** implemented until a later phase.
+HTTP route handlers for auth and profile are **implemented (Phase 1D)**. Session, delivery, and machine routes remain future phases.
+
+### Implemented routes (Phase 1D)
+
+| Method | Path                    | Auth | Role   | Status             |
+| ------ | ----------------------- | ---- | ------ | ------------------ |
+| GET    | `/health`               | No   | —      | Implemented        |
+| POST   | `/api/v1/auth/register` | No   | —      | Implemented        |
+| GET    | `/api/v1/profile`       | Yes  | PLAYER | Implemented        |
+| PUT    | `/api/v1/profile`       | Yes  | PLAYER | Implemented        |
+| GET    | `/api/v1/admin/status`  | Yes  | ADMIN  | Implemented (stub) |
 
 ## Validation layers
 

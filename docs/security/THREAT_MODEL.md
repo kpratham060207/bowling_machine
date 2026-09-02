@@ -1,6 +1,6 @@
 # Threat Model
 
-> **Status:** Designed (not implemented)
+> **Status:** Designed; backend auth implemented (Phase 1D); penetration testing not performed
 > **Last updated:** 2026-09-02
 
 ## Overview
@@ -46,12 +46,14 @@ Identifies security threats to the bowling machine system and planned mitigation
 
 **Threat:** Attacker steals player JWT to impersonate user.
 
-| Mitigation                                    | Layer     |
-| --------------------------------------------- | --------- |
-| HTTPS in production                           | Transport |
-| JWT expiry (Supabase managed)                 | Auth      |
-| Refresh token rotation                        | Auth      |
-| No sensitive actions without re-auth (future) | Backend   |
+| Mitigation                                    | Layer     | Status          |
+| --------------------------------------------- | --------- | --------------- |
+| HTTPS in production                           | Transport | Not deployed    |
+| JWT expiry (Supabase managed)                 | Auth      | Implemented     |
+| Cookie-based session (@supabase/ssr)          | Auth      | Implemented     |
+| Backend JWT verification on every API request | Backend   | Implemented     |
+| Refresh token rotation                        | Auth      | Supabase SDK    |
+| No sensitive actions without re-auth (future) | Backend   | Not implemented |
 
 ### T3: Injection via API Inputs
 

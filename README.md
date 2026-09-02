@@ -4,15 +4,17 @@ Smart AI-enabled cricket bowling machine for solo batting practice.
 
 ## Project Status
 
-**Phase 1A: Repository & Development Foundation** — Complete
+**Phase 1D: Authentication & Authorization** — Complete
 
-The monorepo tooling, TypeScript, lint/format, Docker PostgreSQL, Vitest, Playwright, and CI are configured. **No application features are implemented yet.**
+Player authentication (Supabase Auth), backend JWT verification, role-based authorization, profile routes, and minimal auth UI are implemented.
 
 | Phase                             | Status       |
 | --------------------------------- | ------------ |
 | 0 — Architecture & documentation  | Complete     |
-| **1A — Repo & dev foundation**    | **Complete** |
-| 1B — Shared application contracts | Not started  |
+| 1A — Repo & dev foundation        | Complete     |
+| 1B — Shared application contracts | Complete     |
+| 1C — Database persistence         | Complete     |
+| **1D — Auth & authorization**     | **Complete** |
 | 1 — MVP (simulator-based)         | Not started  |
 
 ## What This Project Is
@@ -23,7 +25,7 @@ Software for a physical cricket bowling machine:
 - **API** (`apps/api`) — Fastify backend
 - **Simulator** (`apps/esp32-simulator`) — development without hardware
 - **Firmware** (`firmware/esp32`) — ESP32 controller (structural placeholder)
-- **PostgreSQL** — sessions, profiles, calibration (schema not implemented)
+- **PostgreSQL** — sessions, profiles, calibration (schema implemented)
 
 ```
 Player Phone → Backend API → ESP32 Firmware → Physical Machine
@@ -49,8 +51,8 @@ The browser never controls hardware directly. The ESP32 is the final authority o
 
 ```
 apps/
-  web/                  # Next.js (placeholder page)
-  api/                  # Backend placeholder
+  web/                  # Next.js auth UI
+  api/                  # Fastify backend with auth
   esp32-simulator/      # Simulator placeholder
 packages/
   api-contracts/        # Shared Zod schemas (placeholder)
@@ -99,11 +101,11 @@ Full guide: [Local Development](docs/deployment/LOCAL_DEVELOPMENT.md)
 
 ## What Is NOT Implemented
 
-- Authentication (Supabase integration — Phase 1D)
-- REST API routes / WebSocket protocol
+- Machine communication / WebSocket protocol
 - ESP32 simulator logic
 - Throw Ball pitch UI
 - Calculation engine
+- Practice sessions API
 - ESP32 firmware
 
 ## Documentation
@@ -114,6 +116,7 @@ Full guide: [Local Development](docs/deployment/LOCAL_DEVELOPMENT.md)
 | [Local Development](docs/deployment/LOCAL_DEVELOPMENT.md)       | Setup guide          |
 | [Testing Setup](docs/testing/TESTING_SETUP.md)                  | Vitest / Playwright  |
 | [Pitch Visualization](docs/frontend/PITCH_VISUALIZATION.md)     | Throw Ball UX design |
+| [Authentication](docs/security/AUTHENTICATION.md)               | Supabase Auth setup  |
 | [MVP Definition](docs/architecture/MVP.md)                      | MVP scope            |
 
 ## Contributing
