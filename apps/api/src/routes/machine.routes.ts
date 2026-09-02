@@ -16,7 +16,8 @@ type MachineRouteDeps = {
 
 /**
  * Machine REST routes — all protected routes require authentication + machine_access.
- * Control lock is required before stop/home/command operations.
+ * Normal control commands (HOME, etc.) require an active control lock.
+ * STOP is a safety-oriented exception — see route handler comment.
  */
 export function registerMachineRoutes(app: FastifyInstance, deps: MachineRouteDeps): void {
   app.get('/machines', async (request) => {
@@ -125,11 +126,16 @@ export function registerMachineRoutes(app: FastifyInstance, deps: MachineRouteDe
     return { data: { machine_id: id, released_at: released.releasedAt } };
   });
 
+  /**
+   * STOP is a high-priority safe operation — requires machine_access but NOT an active
+   * control lock. An expired web-session lease must not block software STOP while the
+   * machine may still be operating. Physical E-stop remains independent; the machine
+   * peer still validates command acceptance.
+   */
   app.post('/machines/:id/stop', async (request) => {
     const auth = getAuthContext(request);
     const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
     await assertPlayerMachineAccess(deps.db, auth.userId, id);
-    await deps.machineService.assertActiveControl(auth.userId, id);
 
     const command = deps.commandService.buildCommand(id, 'STOP', {});
     const result = await deps.commandService.dispatch(command);

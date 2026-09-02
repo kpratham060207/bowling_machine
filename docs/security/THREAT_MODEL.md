@@ -51,6 +51,8 @@ Identifies security threats to the bowling machine system and planned mitigation
 | HTTPS in production                           | Transport | Not deployed    |
 | JWT expiry (Supabase managed)                 | Auth      | Implemented     |
 | Cookie-based session (@supabase/ssr)          | Auth      | Implemented     |
+| Browser WebSocket rejects JWT in query string | Backend   | Implemented (1E) |
+| Browser WS ticket single-use + short TTL      | Backend   | Implemented (1E) |
 | Backend JWT verification on every API request | Backend   | Implemented     |
 | Refresh token rotation                        | Auth      | Supabase SDK    |
 | No sensitive actions without re-auth (future) | Backend   | Not implemented |

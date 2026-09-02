@@ -216,6 +216,107 @@ describe('machine integration', () => {
   }, 30_000);
 });
 
+describe('STOP authorization vs control lock', () => {
+  it('allows authorized player to STOP without active control lock', async ({ skip }) => {
+    if (!dbAvailable || !server) {
+      skip();
+      return;
+    }
+
+    const simulator = new TestSimulatorPeer(port, machineA, DEV_SIMULATOR_CONNECTION_SECRET);
+    await simulator.connect();
+    await sleep(200);
+
+    const token = await signTestAccessToken(createTestApiEnv(), { sub: playerA });
+    const stop = await server.app.inject({
+      method: 'POST',
+      url: `/machines/${machineA}/stop`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(stop.statusCode).toBe(200);
+    expect((parseJson(stop) as { data: { status: string } }).data.status).toBe('ACCEPTED');
+
+    simulator.disconnect();
+  }, 15_000);
+
+  it('rejects STOP from player without machine access', async ({ skip }) => {
+    if (!dbAvailable || !server) {
+      skip();
+      return;
+    }
+
+    const token = await signTestAccessToken(createTestApiEnv(), { sub: playerB });
+    const stop = await server.app.inject({
+      method: 'POST',
+      url: `/machines/${machineB}/stop`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(stop.statusCode).toBe(403);
+  });
+
+  it('allows STOP when control lease expired (safety override)', async ({ skip }) => {
+    if (!dbAvailable || !server) {
+      skip();
+      return;
+    }
+
+    const simulator = new TestSimulatorPeer(port, machineA, DEV_SIMULATOR_CONNECTION_SECRET);
+    await simulator.connect();
+    await sleep(200);
+
+    const token = await signTestAccessToken(createTestApiEnv(), { sub: playerA });
+    await server.app.inject({
+      method: 'POST',
+      url: `/machines/${machineA}/control/acquire`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    await server.app.inject({
+      method: 'POST',
+      url: `/machines/${machineA}/control/release`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    const stop = await server.app.inject({
+      method: 'POST',
+      url: `/machines/${machineA}/stop`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(stop.statusCode).toBe(200);
+
+    simulator.disconnect();
+  }, 15_000);
+
+  it('handles repeated STOP idempotently when machine already stopped', async ({ skip }) => {
+    if (!dbAvailable || !server) {
+      skip();
+      return;
+    }
+
+    const simulator = new TestSimulatorPeer(port, machineA, DEV_SIMULATOR_CONNECTION_SECRET);
+    await simulator.connect();
+    await sleep(200);
+
+    const token = await signTestAccessToken(createTestApiEnv(), { sub: playerA });
+    const first = await server.app.inject({
+      method: 'POST',
+      url: `/machines/${machineA}/stop`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(first.statusCode).toBe(200);
+
+    await sleep(200);
+
+    const second = await server.app.inject({
+      method: 'POST',
+      url: `/machines/${machineA}/stop`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(second.statusCode).toBe(200);
+
+    simulator.disconnect();
+  }, 15_000);
+});
+
 describe('machine command idempotency', () => {
   it('returns stored result for duplicate command_id without re-dispatch', async ({ skip }) => {
     if (!dbAvailable || !server) {

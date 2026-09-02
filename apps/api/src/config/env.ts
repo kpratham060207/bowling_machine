@@ -22,13 +22,22 @@ const EnvSchema = z.object({
    * SERVER ONLY — not the anon key.
    */
   SUPABASE_JWT_SECRET: z.string().min(1),
+  /**
+   * Supabase anon key — used ONLY to read SSR session cookies for browser WebSocket auth.
+   * Same value as NEXT_PUBLIC_SUPABASE_ANON_KEY; never used for privileged operations.
+   */
+  SUPABASE_ANON_KEY: z.string().min(1),
+  /** Time allowed for browser WebSocket ticket authentication after connect. */
+  WS_BROWSER_AUTH_TIMEOUT_MS: z.coerce.number().int().positive().default(5_000),
+  /** TTL for single-use browser WebSocket tickets issued via POST /ws/browser/ticket. */
+  WS_BROWSER_TICKET_TTL_MS: z.coerce.number().int().positive().default(30_000),
   /** Default TTL for machine commands before they are rejected as stale. */
   MACHINE_COMMAND_TTL_MS: z.coerce.number().int().positive().default(30_000),
   /** Exclusive control lock duration — abandoned locks expire and can be reclaimed. */
   MACHINE_CONTROL_LOCK_TTL_MS: z.coerce.number().int().positive().default(1_800_000),
   /** Expected machine heartbeat interval from peer (simulator/ESP32). */
   MACHINE_HEARTBEAT_INTERVAL_MS: z.coerce.number().int().positive().default(5_000),
-  /** Mark connection degraded/offline when heartbeat missing for this duration. */
+  /** Mark connection reconnecting/offline when heartbeat missing for this duration. */
   MACHINE_HEARTBEAT_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
   /** Wait this long for machine command acknowledgement before failing the API request. */
   MACHINE_COMMAND_ACK_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),

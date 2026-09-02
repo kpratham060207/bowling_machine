@@ -25,22 +25,22 @@ HTTP route handlers for auth, profile, and **machine control** are **implemented
 
 ### Implemented routes (Phase 1D–1E)
 
-| Method | Path                    | Auth | Role   | Status             |
-| ------ | ----------------------- | ---- | ------ | ------------------ |
-| GET    | `/health`               | No   | —      | Implemented        |
-| POST   | `/api/v1/auth/register` | No   | —      | Implemented        |
-| GET    | `/api/v1/profile`       | Yes  | PLAYER | Implemented        |
-| PUT    | `/api/v1/profile`       | Yes  | PLAYER | Implemented        |
-| GET    | `/machines`             | Yes  | PLAYER | Implemented (1E)   |
-| GET    | `/machines/:id`         | Yes  | PLAYER | Implemented (1E)   |
-| GET    | `/machines/:id/status`  | Yes  | PLAYER | Implemented (1E)   |
-| POST   | `/machines/connect`     | Yes  | PLAYER | Implemented (1E)   |
-| POST   | `/machines/:id/control/acquire` | Yes | PLAYER | Implemented (1E) |
-| POST   | `/machines/:id/control/release` | Yes | PLAYER | Implemented (1E) |
-| POST   | `/machines/:id/stop`    | Yes  | PLAYER | Implemented (1E)   |
-| POST   | `/machines/:id/home`    | Yes  | PLAYER | Implemented (1E)   |
-| POST   | `/machines/:id/disconnect` | Yes | PLAYER | Implemented (1E) |
-| GET    | `/api/v1/admin/status`  | Yes  | ADMIN  | Implemented (stub) |
+| Method | Path                            | Auth | Role   | Status             |
+| ------ | ------------------------------- | ---- | ------ | ------------------ |
+| GET    | `/health`                       | No   | —      | Implemented        |
+| POST   | `/api/v1/auth/register`         | No   | —      | Implemented        |
+| GET    | `/api/v1/profile`               | Yes  | PLAYER | Implemented        |
+| PUT    | `/api/v1/profile`               | Yes  | PLAYER | Implemented        |
+| GET    | `/machines`                     | Yes  | PLAYER | Implemented (1E)   |
+| GET    | `/machines/:id`                 | Yes  | PLAYER | Implemented (1E)   |
+| GET    | `/machines/:id/status`          | Yes  | PLAYER | Implemented (1E)   |
+| POST   | `/machines/connect`             | Yes  | PLAYER | Implemented (1E)   |
+| POST   | `/machines/:id/control/acquire` | Yes  | PLAYER | Implemented (1E)   |
+| POST   | `/machines/:id/control/release` | Yes  | PLAYER | Implemented (1E)   |
+| POST   | `/machines/:id/stop`            | Yes  | PLAYER | Implemented (1E)   |
+| POST   | `/machines/:id/home`            | Yes  | PLAYER | Implemented (1E)   |
+| POST   | `/machines/:id/disconnect`      | Yes  | PLAYER | Implemented (1E)   |
+| GET    | `/api/v1/admin/status`          | Yes  | ADMIN  | Implemented (stub) |
 
 ## Validation layers
 
@@ -289,10 +289,10 @@ Request:
 
 Real-time events are delivered via WebSocket. See [WebSocket Events](../protocol/WEBSOCKET_EVENTS.md).
 
-| Endpoint      | Auth            | Purpose                  |
-| ------------- | --------------- | ------------------------ |
-| `/ws/browser` | JWT query param | Browser real-time events |
-| `/ws/machine` | Machine secret  | ESP32 communication      |
+| Endpoint      | Auth                     | Purpose                  |
+| ------------- | ------------------------ | ------------------------ |
+| `/ws/browser` | Session cookie or ticket | Browser real-time events |
+| `/ws/machine` | Machine secret           | ESP32 communication      |
 
 ## Related Documents
 

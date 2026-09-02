@@ -21,13 +21,13 @@ pnpm --filter @bowling-machine/esp32-simulator dev
 
 Environment (see `.env.example`):
 
-| Variable | Default | Purpose |
-| -------- | ------- | ------- |
-| `SIMULATOR_BACKEND_URL` | `http://127.0.0.1:4000` | Backend base URL (auto `ws://`) |
-| `SIMULATOR_MACHINE_ID` | Dev seed machine UUID | Machine identity |
-| `SIMULATOR_CONNECTION_SECRET` | `dev-simulator-secret-001` | Peer auth secret |
-| `SIMULATOR_HEARTBEAT_MS` | `5000` | Heartbeat interval |
-| `SIMULATOR_FAILURE_MODE` | `none` | Failure injection (dev/test) |
+| Variable                      | Default                    | Purpose                         |
+| ----------------------------- | -------------------------- | ------------------------------- |
+| `SIMULATOR_BACKEND_URL`       | `http://127.0.0.1:4000`    | Backend base URL (auto `ws://`) |
+| `SIMULATOR_MACHINE_ID`        | Dev seed machine UUID      | Machine identity                |
+| `SIMULATOR_CONNECTION_SECRET` | `dev-simulator-secret-001` | Peer auth secret                |
+| `SIMULATOR_HEARTBEAT_MS`      | `5000`                     | Heartbeat interval              |
+| `SIMULATOR_FAILURE_MODE`      | `none`                     | Failure injection (dev/test)    |
 
 ## State machine (simulated)
 
@@ -65,16 +65,16 @@ Rejects commands when:
 
 Set `SIMULATOR_FAILURE_MODE` for controlled test scenarios:
 
-| Mode | Behavior |
-| ---- | -------- |
-| `connection_loss` | Do not reconnect after disconnect |
-| `heartbeat_timeout` | Stop sending heartbeats |
-| `command_timeout` | Ignore incoming commands |
-| `machine_fault` | Reject with fault |
-| `actuator_failure` | Fail during homing |
-| `wheel_spinup_failure` | Fail during throw spin-up |
-| `feeder_failure` | Reject throw sequence |
-| `emergency_stop` | Trigger E-stop shortly after connect |
+| Mode                   | Behavior                             |
+| ---------------------- | ------------------------------------ |
+| `connection_loss`      | Do not reconnect after disconnect    |
+| `heartbeat_timeout`    | Stop sending heartbeats              |
+| `command_timeout`      | Ignore incoming commands             |
+| `machine_fault`        | Reject with fault                    |
+| `actuator_failure`     | Fail during homing                   |
+| `wheel_spinup_failure` | Fail during throw spin-up            |
+| `feeder_failure`       | Reject throw sequence                |
+| `emergency_stop`       | Trigger E-stop shortly after connect |
 
 Not exposed to player UI — development and automated tests only.
 

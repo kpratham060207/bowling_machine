@@ -68,6 +68,9 @@ importers:
       '@fastify/websocket':
         specifier: ^11.0.2
         version: 11.3.0
+      '@supabase/ssr':
+        specifier: ^0.12.5
+        version: 0.12.5(@supabase/supabase-js@2.114.0)
       '@supabase/supabase-js':
         specifier: ^2.114.0
         version: 2.114.0
@@ -87,9 +90,6 @@ importers:
       '@bowling-machine/config':
         specifier: workspace:*
         version: link:../../packages/config
-      '@bowling-machine/esp32-simulator':
-        specifier: workspace:*
-        version: link:../esp32-simulator
       '@types/node':
         specifier: ^22.10.2
         version: 22.20.1

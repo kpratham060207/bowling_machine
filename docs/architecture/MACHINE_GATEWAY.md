@@ -21,14 +21,14 @@ DefaultMachineGateway + wire codec
 
 ## Components
 
-| Component | Location | Responsibility |
-| --------- | -------- | -------------- |
-| `MachineGateway` | `apps/api/src/gateway/types.ts` | Transport-independent interface |
-| `DefaultMachineGateway` | `apps/api/src/gateway/machine-gateway.ts` | Connection state, command dispatch, ack waiting |
-| `MachineEventBus` | `apps/api/src/gateway/event-bus.ts` | In-process pub/sub for WebSocket events |
-| Wire schemas | `packages/api-contracts/src/protocol/wire.ts` | Provisional JSON envelope for machine peer |
-| Machine WS route | `apps/api/src/websocket/machine-ws.ts` | `/ws/machine` auth + peer attach |
-| Browser WS route | `apps/api/src/websocket/browser-ws.ts` | `/ws/browser` JWT + machine access filter |
+| Component               | Location                                      | Responsibility                                  |
+| ----------------------- | --------------------------------------------- | ----------------------------------------------- |
+| `MachineGateway`        | `apps/api/src/gateway/types.ts`               | Transport-independent interface                 |
+| `DefaultMachineGateway` | `apps/api/src/gateway/machine-gateway.ts`     | Connection state, command dispatch, ack waiting |
+| `MachineEventBus`       | `apps/api/src/gateway/event-bus.ts`           | In-process pub/sub for WebSocket events         |
+| Wire schemas            | `packages/api-contracts/src/protocol/wire.ts` | Provisional JSON envelope for machine peer      |
+| Machine WS route        | `apps/api/src/websocket/machine-ws.ts`        | `/ws/machine` auth + peer attach                |
+| Browser WS route        | `apps/api/src/websocket/browser-ws.ts`        | `/ws/browser` cookie or ticket auth             |
 
 ## Connection lifecycle
 
@@ -38,6 +38,10 @@ Per machine peer (aligned with `MachineConnectionStatusSchema`):
 2. **CONNECTING** — auth handshake in progress
 3. **CONNECTED** — peer authenticated; heartbeats active
 4. **RECONNECTING** — heartbeat missed; grace period before detach
+
+These are **connection states** (backend ↔ machine peer transport). They are separate from **machine states** (`READY`, `FEEDING`, `ERROR`, etc.) reported in telemetry.
+
+Canonical values are defined in `MachineConnectionStatusSchema`: `DISCONNECTED`, `CONNECTING`, `CONNECTED`, `RECONNECTING`. Do not use alternate terms such as `DEGRADED` or `DISCONNECTING`.
 
 Heartbeat policy (MVP):
 
@@ -68,11 +72,11 @@ Documented in `MachineCommandService.dispatch()` — not distributed idempotency
 
 ## Authorization boundaries
 
-| Check | Enforced by |
-| ----- | ----------- |
-| Authenticated player | JWT middleware |
-| `machine_access` grant | `assertPlayerMachineAccess()` |
-| Active control lock | `MachineService.assertActiveControl()` |
+| Check                   | Enforced by                                  |
+| ----------------------- | -------------------------------------------- |
+| Authenticated player    | JWT middleware                               |
+| `machine_access` grant  | `assertPlayerMachineAccess()`                |
+| Active control lock     | `MachineService.assertActiveControl()`       |
 | Live event subscription | Browser WS filters by accessible machine ids |
 
 Admins do not bypass player machine routes unless explicitly implemented on admin routes (Phase 1E: admin machine management stub only).
@@ -85,6 +89,15 @@ Table: `machine_control_locks` (Phase 1E migration `0001`).
 - First-come-first-served (UD-06 MVP option 1)
 - `expires_at` enables abandoned lock recovery
 - Release on normal session completion via `POST /machines/:id/control/release`
+
+### STOP vs control lock (safety rule)
+
+| Operation                            | Requires `machine_access` | Requires active control lock |
+| ------------------------------------ | ------------------------- | ---------------------------- |
+| HOME, future throw/delivery commands | Yes                       | Yes                          |
+| **STOP**                             | Yes                       | **No**                       |
+
+**STOP** is a high-priority safe operation. An expired web control lease must not block software STOP while the machine may still be operating. Physical emergency stop remains independent. The machine peer still validates and acknowledges STOP.
 
 ## Telemetry persistence policy
 

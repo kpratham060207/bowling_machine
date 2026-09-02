@@ -16,12 +16,14 @@ import { registerAuthRoutes } from './routes/auth.routes.js';
 import { registerProfileRoutes } from './routes/profile.routes.js';
 import { registerAdminRoutes } from './routes/admin.routes.js';
 import { registerMachineRoutes } from './routes/machine.routes.js';
+import { registerWsTicketRoutes } from './routes/ws-ticket.routes.js';
 import { MachineEventBus } from './gateway/event-bus.js';
 import { DefaultMachineGateway } from './gateway/machine-gateway.js';
 import { MachineService } from './services/machine.service.js';
 import { MachineCommandService } from './services/machine-command.service.js';
 import { registerMachineWebSocketRoutes } from './websocket/machine-ws.js';
 import { registerBrowserWebSocketRoutes } from './websocket/browser-ws.js';
+import { BrowserWsTicketService } from './websocket/ws-ticket.service.js';
 
 export type ApiServer = Awaited<ReturnType<typeof buildApiServer>>;
 
@@ -35,6 +37,7 @@ export async function buildApiServer(env: ApiEnv) {
   const supabaseAdmin = createSupabaseAdminClient(env);
 
   const eventBus = new MachineEventBus();
+  const wsTicketService = new BrowserWsTicketService(env.WS_BROWSER_TICKET_TTL_MS);
   const gateway = new DefaultMachineGateway(eventBus, env.MACHINE_HEARTBEAT_TIMEOUT_MS);
   const machineService = new MachineService(db, gateway, env.MACHINE_CONTROL_LOCK_TTL_MS);
   const commandService = new MachineCommandService(
@@ -65,7 +68,13 @@ export async function buildApiServer(env: ApiEnv) {
   registerAuthRoutes(app, { db, supabaseAdmin });
 
   await registerMachineWebSocketRoutes(app, { db, gateway });
-  registerBrowserWebSocketRoutes(app, { db, jwtVerifier, eventBus });
+  registerBrowserWebSocketRoutes(app, {
+    env,
+    db,
+    jwtVerifier,
+    eventBus,
+    wsTicketService,
+  });
 
   // Authorization hooks on nested plugins MUST be async — sync onRequest hooks in
   // encapsulated child plugins do not signal completion and authenticated inject() hangs.
@@ -76,6 +85,7 @@ export async function buildApiServer(env: ApiEnv) {
       playerRoutes.addHook('onRequest', requireAuthenticationHook);
       playerRoutes.addHook('onRequest', requirePlayerHook);
       registerProfileRoutes(playerRoutes, { db });
+      registerWsTicketRoutes(playerRoutes, { wsTicketService });
       registerMachineRoutes(playerRoutes, { db, machineService, commandService });
     });
 
@@ -102,6 +112,7 @@ export async function buildApiServer(env: ApiEnv) {
     authenticateOptional,
     gateway,
     eventBus,
+    wsTicketService,
     machineService,
     commandService,
   };

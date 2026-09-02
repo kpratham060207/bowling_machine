@@ -1,6 +1,6 @@
 # WebSocket Events
 
-> **Status:** Domain event contracts implemented (Phase 1B); gateway not implemented
+> **Status:** Implemented (Phase 1E)
 > **Last updated:** 2026-09-02
 
 ## Overview
@@ -43,10 +43,41 @@ The gateway maps domain `event_type` values to wire `type` strings (e.g. `machin
 ## Browser WebSocket Connection
 
 ```
-URL: ws://<backend_host>:<port>/ws/browser?token=<jwt>
+URL: ws://<backend_host>:<port>/ws/browser
 ```
 
-Authentication: Supabase JWT passed as query parameter. Validated on connection.
+**Authentication — tokens are NOT accepted in the URL.**
+
+### Option A: Session cookies (preferred)
+
+When the browser and API share a session context (same-origin or credentialed deployment), Supabase SSR cookies are sent on the WebSocket upgrade request automatically.
+
+### Option B: Ticket handshake (cross-origin local dev)
+
+1. `POST /ws/browser/ticket` with `Authorization: Bearer <access_token>` (from authenticated REST context)
+2. Connect to `/ws/browser` (no query params)
+3. Send first message:
+
+```json
+{
+  "type": "authenticate",
+  "ticket": "uuid-from-ticket-endpoint"
+}
+```
+
+Server responds:
+
+```json
+{
+  "type": "connected",
+  "payload": {
+    "user_id": "uuid",
+    "subscribed_machines": ["uuid", "..."]
+  }
+}
+```
+
+Query-string JWTs are rejected with an error — use cookies or ticket flow instead.
 
 ### Subscription
 

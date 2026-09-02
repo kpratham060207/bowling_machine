@@ -27,14 +27,41 @@ The Supabase Auth UUID **is** the application user ID. No second player UUID is 
 
 ## Session handling (frontend)
 
-| Mechanism | Detail                                                          |
-| --------- | --------------------------------------------------------------- |
-| Storage   | HTTP-only cookies via `@supabase/ssr`                           |
-| Not used  | localStorage for access tokens                                  |
-| Refresh   | Next.js middleware refreshes session on each request            |
-| API calls | Browser sends `Authorization: Bearer <access_token>` to backend |
+| Mechanism | Detail                                                                     |
+| --------- | -------------------------------------------------------------------------- |
+| Storage   | HTTP-only cookies via `@supabase/ssr`                                      |
+| Not used  | localStorage for access tokens                                             |
+| Refresh   | Next.js middleware refreshes session on each request                       |
+| API calls | Browser sends `Authorization: Bearer <access_token>` to backend            |
+| WebSocket | Session cookies (same-origin) or short-lived ticket — **never JWT in URL** |
 
 Login and logout use the Supabase browser client. Session restoration happens automatically via cookie refresh in middleware.
+
+## Browser WebSocket authentication (Phase 1E)
+
+Browser real-time events use `/ws/browser`. **JWT query parameters are rejected** — they leak via server logs, proxies, and browser history.
+
+### Primary: Supabase SSR session cookies
+
+When the WebSocket upgrade request includes Supabase SSR auth cookies (same-origin deployment or credentialed cross-origin), the API reads the session via `@supabase/ssr` and verifies the access token with `SUPABASE_JWT_SECRET`.
+
+This aligns with the existing HTTP-only cookie session model.
+
+### Fallback: short-lived WebSocket ticket (cross-origin dev)
+
+When cookies are not sent to the API host (e.g. web `localhost:3000`, API `localhost:4000`):
+
+1. Browser obtains ticket via authenticated `POST /ws/browser/ticket` (Bearer from server-side session or REST client)
+2. Browser connects to `/ws/browser` with **no auth in URL**
+3. First message: `{ "type": "authenticate", "ticket": "<uuid>" }`
+4. Ticket is single-use, 30s TTL, bound to user id
+
+### Security rules
+
+- Query-string tokens (`access_token`, `token`, `jwt`) are **rejected**
+- Tokens are never logged
+- Service role key is never used for browser WebSocket auth
+- Events filtered by `machine_access` after authentication
 
 ## Registration lifecycle
 
@@ -79,15 +106,16 @@ Ownership helpers (for future session/delivery/plan routes):
 
 See [.env.example](../../.env.example).
 
-| Variable                        | Scope       | Purpose                  |
-| ------------------------------- | ----------- | ------------------------ |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Browser     | Supabase project URL     |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser     | Public anon key          |
-| `NEXT_PUBLIC_API_URL`           | Browser     | Backend API URL          |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Server only | Auth user provisioning   |
-| `SUPABASE_JWT_SECRET`           | Server only | Verify API Bearer tokens |
-| `SUPABASE_URL`                  | Server only | JWT issuer validation    |
-| `DATABASE_URL`                  | Server only | PostgreSQL connection    |
+| Variable                        | Scope       | Purpose                              |
+| ------------------------------- | ----------- | ------------------------------------ |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Browser     | Supabase project URL                 |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser     | Public anon key                      |
+| `NEXT_PUBLIC_API_URL`           | Browser     | Backend API URL                      |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Server only | Auth user provisioning               |
+| `SUPABASE_JWT_SECRET`           | Server only | Verify API Bearer tokens             |
+| `SUPABASE_ANON_KEY`             | Server only | Read SSR cookies for browser WS auth |
+| `SUPABASE_URL`                  | Server only | JWT issuer validation                |
+| `DATABASE_URL`                  | Server only | PostgreSQL connection                |
 
 ## Supabase development setup
 
