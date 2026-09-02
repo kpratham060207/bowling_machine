@@ -60,6 +60,27 @@ function extractMachineId(event: WebSocketEvent): string | undefined {
       return event.payload.machine_id;
     case 'STATUS_UPDATED':
       return event.payload.status.machine_id;
+    case 'DELIVERY_STARTED':
+    case 'DELIVERY_COMPLETED':
+    case 'DELIVERY_FAILED':
+      return event.payload.machine_id;
+    case 'SESSION_STARTED':
+    case 'SESSION_COMPLETED':
+      return event.payload.machine_id;
+    default:
+      return undefined;
+  }
+}
+
+export function extractPlayerIdFromEvent(event: WebSocketEvent): string | undefined {
+  switch (event.event_type) {
+    case 'DELIVERY_STARTED':
+    case 'DELIVERY_COMPLETED':
+    case 'DELIVERY_FAILED':
+      return event.payload.player_id;
+    case 'SESSION_STARTED':
+    case 'SESSION_COMPLETED':
+      return event.payload.player_id;
     default:
       return undefined;
   }

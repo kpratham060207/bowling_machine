@@ -16,11 +16,16 @@ import { registerAuthRoutes } from './routes/auth.routes.js';
 import { registerProfileRoutes } from './routes/profile.routes.js';
 import { registerAdminRoutes } from './routes/admin.routes.js';
 import { registerMachineRoutes } from './routes/machine.routes.js';
+import { registerSessionRoutes } from './routes/session.routes.js';
 import { registerWsTicketRoutes } from './routes/ws-ticket.routes.js';
 import { MachineEventBus } from './gateway/event-bus.js';
 import { DefaultMachineGateway } from './gateway/machine-gateway.js';
 import { MachineService } from './services/machine.service.js';
 import { MachineCommandService } from './services/machine-command.service.js';
+import { SessionService } from './services/session.service.js';
+import { OrchestrationEventPublisher } from './services/orchestration-event-publisher.js';
+import { DeliveryOrchestrationService } from './services/delivery-orchestration.service.js';
+import { DeliveryExecutionTracker } from './services/delivery-execution-tracker.js';
 import { registerMachineWebSocketRoutes } from './websocket/machine-ws.js';
 import { registerBrowserWebSocketRoutes } from './websocket/browser-ws.js';
 import { BrowserWsTicketService } from './websocket/ws-ticket.service.js';
@@ -46,6 +51,17 @@ export async function buildApiServer(env: ApiEnv) {
     env.MACHINE_COMMAND_TTL_MS,
     env.MACHINE_COMMAND_ACK_TIMEOUT_MS,
   );
+  const sessionService = new SessionService(db);
+  const orchestrationEventPublisher = new OrchestrationEventPublisher(eventBus);
+  const deliveryOrchestration = new DeliveryOrchestrationService(
+    db,
+    sessionService,
+    machineService,
+    commandService,
+    orchestrationEventPublisher,
+  );
+  const deliveryExecutionTracker = new DeliveryExecutionTracker(eventBus, deliveryOrchestration);
+  deliveryExecutionTracker.start();
 
   const app = Fastify({
     logger: {
@@ -87,6 +103,12 @@ export async function buildApiServer(env: ApiEnv) {
       registerProfileRoutes(playerRoutes, { db });
       registerWsTicketRoutes(playerRoutes, { wsTicketService });
       registerMachineRoutes(playerRoutes, { db, machineService, commandService });
+      registerSessionRoutes(playerRoutes, {
+        db,
+        sessionService,
+        deliveryOrchestration,
+        eventPublisher: orchestrationEventPublisher,
+      });
     });
 
     await protectedApi.register((adminRoutes) => {
@@ -97,6 +119,7 @@ export async function buildApiServer(env: ApiEnv) {
   });
 
   app.addHook('onClose', async () => {
+    deliveryExecutionTracker.stop();
     await sql.end();
   });
 
@@ -115,6 +138,10 @@ export async function buildApiServer(env: ApiEnv) {
     wsTicketService,
     machineService,
     commandService,
+    sessionService,
+    deliveryOrchestration,
+    orchestrationEventPublisher,
+    deliveryExecutionTracker,
   };
 }
 

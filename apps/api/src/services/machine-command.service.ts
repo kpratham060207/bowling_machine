@@ -4,6 +4,7 @@ import {
   MachineCommandSchema,
   PROTOCOL_VERSION,
   type CommandAcknowledgement,
+  type CommandId,
   type MachineCommand,
 } from '@bowling-machine/api-contracts';
 import type { Database } from '@bowling-machine/database';
@@ -35,7 +36,7 @@ export class MachineCommandService {
     machineId: string,
     commandType: MachineCommand['command_type'],
     payload: MachineCommand['payload'],
-    commandId = randomUUID(),
+    commandId: CommandId = randomUUID(),
   ): MachineCommand {
     const issuedAt = nowIso();
     const expiresAt = addMilliseconds(issuedAt, this.commandTtlMs);
@@ -57,7 +58,10 @@ export class MachineCommandService {
    * Idempotency: duplicate command_id returns the stored outcome without re-dispatching
    * to the machine peer (prevents unsafe duplicate execution on retries).
    */
-  async dispatch(command: MachineCommand): Promise<CommandDispatchResult> {
+  async dispatch(
+    command: MachineCommand,
+    options?: { sessionId?: string },
+  ): Promise<CommandDispatchResult> {
     const incomingVersion: string = command.protocol_version;
     if (incomingVersion !== PROTOCOL_VERSION) {
       throw ApiHttpError.validation('Unsupported protocol version', {
@@ -124,6 +128,7 @@ export class MachineCommandService {
       expiresAt: command.expires_at ?? null,
       payload: command,
       status: 'PENDING',
+      sessionId: options?.sessionId ?? null,
     });
 
     if (!this.gateway.isMachineConnected(command.machine_id)) {

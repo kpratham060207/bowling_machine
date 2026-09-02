@@ -13,6 +13,9 @@ import {
 export class InlineTestSimulatorHandler {
   private state: MachineStatus['state'] = 'READY';
   private homingStatus: MachineStatus['homing_status'] = 'NOT_HOMED';
+  private activeCommandId: string | null = null;
+  private activeDeliveryId: string | null = null;
+  private sequenceRemaining = 0;
 
   constructor(
     private readonly machineId: string,
@@ -72,14 +75,61 @@ export class InlineTestSimulatorHandler {
       case 'STOP':
         this.ack(command, true, null, 'Stop');
         this.state = 'STOPPING';
+        this.activeCommandId = command.command_id;
+        this.sequenceRemaining = 0;
         this.schedule(() => {
           this.state = 'READY';
+          this.activeCommandId = null;
+          this.activeDeliveryId = null;
           this.publishStatus();
         }, 100);
+        break;
+      case 'THROW_SEQUENCE':
+        this.handleThrowSequence(command);
         break;
       default:
         this.ack(command, false, 'COMMAND_REJECTED', 'Not implemented in inline test simulator');
     }
+  }
+
+  private handleThrowSequence(command: MachineCommand): void {
+    if (command.command_type !== 'THROW_SEQUENCE') {
+      return;
+    }
+
+    if (this.homingStatus !== 'HOMED') {
+      this.ack(command, false, 'COMMAND_REJECTED', 'Machine must be homed first');
+      return;
+    }
+
+    const deliveryCount = command.payload.delivery_count;
+    this.sequenceRemaining = deliveryCount;
+    this.activeCommandId = command.command_id;
+    this.activeDeliveryId = command.payload.delivery_id ?? null;
+    this.ack(command, true, null, 'Throw sequence accepted');
+
+    const runBall = (index: number): void => {
+      if (index >= deliveryCount) {
+        this.activeCommandId = null;
+        this.activeDeliveryId = null;
+        this.sequenceRemaining = 0;
+        this.state = 'READY';
+        this.publishStatus();
+        return;
+      }
+
+      this.state = 'FEEDING';
+      this.publishStatus();
+
+      this.schedule(() => {
+        this.sequenceRemaining = deliveryCount - index - 1;
+        this.state = 'WAITING';
+        this.publishStatus();
+        runBall(index + 1);
+      }, 60);
+    };
+
+    runBall(0);
   }
 
   private ack(
@@ -111,8 +161,8 @@ export class InlineTestSimulatorHandler {
       kind: 'SIMULATOR',
       connection_status: 'CONNECTED',
       state: this.state,
-      active_command_id: null,
-      active_delivery_id: null,
+      active_command_id: this.activeCommandId,
+      active_delivery_id: this.activeDeliveryId,
       wheel1_current_rpm: 0,
       wheel2_current_rpm: 0,
       wheel1_target_rpm: null,

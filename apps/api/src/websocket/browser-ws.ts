@@ -7,6 +7,7 @@ import { getAccessTokenFromSupabaseCookies } from '../auth/supabase-session-from
 import { loadAuthContextForUser } from '../auth/provisioning.js';
 import { listAccessibleMachineIds } from '../services/machine-access.service.js';
 import type { MachineEventBus } from '../gateway/event-bus.js';
+import { extractPlayerIdFromEvent } from '../gateway/event-bus.js';
 import type { BrowserWsTicketService } from './ws-ticket.service.js';
 import { webSocketDataToString } from '../lib/ws-data.js';
 import type { WebSocket } from 'ws';
@@ -154,6 +155,11 @@ function finalizeAuthenticatedConnection(
     const accessible = new Set(await listAccessibleMachineIds(deps.db, userId));
 
     const unsubscribe = deps.eventBus.subscribe((event) => {
+      const playerId = extractPlayerIdFromEvent(event);
+      if (playerId && playerId !== userId) {
+        return;
+      }
+
       const machineId = extractMachineIdFromEvent(event);
       if (machineId && !accessible.has(machineId)) {
         return;
@@ -201,6 +207,13 @@ function extractMachineIdFromEvent(event: WebSocketEvent): string | undefined {
       return event.payload.machine_id;
     case 'STATUS_UPDATED':
       return event.payload.status.machine_id;
+    case 'DELIVERY_STARTED':
+    case 'DELIVERY_COMPLETED':
+    case 'DELIVERY_FAILED':
+      return event.payload.machine_id;
+    case 'SESSION_STARTED':
+    case 'SESSION_COMPLETED':
+      return event.payload.machine_id;
     default:
       return undefined;
   }
