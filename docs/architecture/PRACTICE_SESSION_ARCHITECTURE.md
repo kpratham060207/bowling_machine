@@ -1,6 +1,6 @@
 # Practice Session Architecture
 
-> **Status:** Designed (not implemented)
+> **Status:** Implemented (Phase 1G)
 > **Last updated:** 2026-09-02
 
 ## Overview
