@@ -26,6 +26,8 @@ export default tseslint.config(
       'packages/config/eslint/**',
       // Next.js generated files — must not be linted (triple-slash refs are required).
       '**/next-env.d.ts',
+      // PostCSS config is CommonJS, not part of the TypeScript project.
+      '**/postcss.config.cjs',
     ],
   },
   eslint.configs.recommended,

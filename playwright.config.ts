@@ -17,13 +17,14 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:3011' },
     },
   ],
-  // Web server will be wired in Phase 1B+ when the app has testable routes.
-  // webServer: {
-  //   command: 'pnpm --filter @bowling-machine/web dev',
-  //   url: 'http://localhost:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
+  webServer: {
+    command:
+      'NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=e2e-anon-key NEXT_PUBLIC_API_URL=http://localhost:4000 PORT=3011 pnpm --filter @bowling-machine/web start',
+    url: 'http://127.0.0.1:3011',
+    reuseExistingServer: !process.env.CI,
+    timeout: 60_000,
+  },
 });
