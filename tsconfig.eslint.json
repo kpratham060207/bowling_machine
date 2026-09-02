@@ -16,5 +16,5 @@
     "eslint.config.js",
     "packages/config/eslint/**/*.js"
   ],
-  "exclude": ["**/dist/**", "**/.next/**", "**/node_modules/**", "firmware/**"]
+  "exclude": ["**/dist/**", "**/.next/**", "**/node_modules/**", "**/next-env.d.ts", "firmware/**"]
 }
