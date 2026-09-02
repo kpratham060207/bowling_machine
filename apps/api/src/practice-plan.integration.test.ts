@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it, skip } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   auditLogs,
   createDatabase,
@@ -84,7 +84,7 @@ afterAll(async () => {
 });
 
 describe('practice plan integration', () => {
-  it('creates, lists, updates, and deletes own plans', async () => {
+  it('creates, lists, updates, and deletes own plans', async ({ skip }) => {
     if (!dbAvailable) {
       skip();
       return;
@@ -137,7 +137,7 @@ describe('practice plan integration', () => {
     expect(remaining).toHaveLength(0);
   });
 
-  it('starting a plan snapshots deliveries into a new session', async () => {
+  it('starting a plan snapshots deliveries into a new session', async ({ skip }) => {
     if (!dbAvailable) {
       skip();
       return;
@@ -202,7 +202,7 @@ describe('practice plan integration', () => {
     expect(persistedSession.data.deliveries[0]?.requested.desired_speed_kmh).toBe(80);
   });
 
-  it('keeps historical sessions when a plan is deleted', async () => {
+  it('keeps historical sessions when a plan is deleted', async ({ skip }) => {
     if (!dbAvailable) {
       skip();
       return;
@@ -243,7 +243,7 @@ describe('practice plan integration', () => {
     expect(sessionResponse.statusCode).toBe(200);
   });
 
-  it('allows admin calibration management with audit trail', async () => {
+  it('allows admin calibration management with audit trail', async ({ skip }) => {
     if (!dbAvailable) {
       skip();
       return;
@@ -278,7 +278,7 @@ describe('practice plan integration', () => {
     expect(auditRows.length).toBeGreaterThan(0);
   });
 
-  it('denies calibration admin routes to players', async () => {
+  it('denies calibration admin routes to players', async ({ skip }) => {
     if (!dbAvailable) {
       skip();
       return;
