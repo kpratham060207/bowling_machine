@@ -86,9 +86,12 @@ export async function buildApiServer(env: ApiEnv) {
 
   registerErrorHandler(app);
 
+  // Cross-origin browser clients (Next.js on :3000+) call PUT/PATCH/DELETE — default
+  // @fastify/cors only advertises GET,HEAD,POST unless methods is set explicitly.
   await app.register(cors, {
     origin: env.NODE_ENV === 'production' ? false : true,
     credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
   });
 
   const authenticate = createAuthenticationHook({ jwtVerifier, db });

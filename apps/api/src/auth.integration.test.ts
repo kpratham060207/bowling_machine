@@ -256,6 +256,87 @@ describe('API authentication and profile routes (integration)', () => {
     await app.close();
   });
 
+  it('updates own profile with valid fields', async ({ skip }) => {
+    if (!dbAvailable || !db) skip();
+    const env = createTestApiEnv({ DATABASE_URL: databaseUrl });
+    const { app } = await buildApiServer(env);
+    const token = await signTestAccessToken(env, {
+      sub: playerA,
+      email: `a-${playerA}@test.local`,
+    });
+
+    const response = await app.inject({
+      method: 'PUT',
+      url: '/api/v1/profile',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        display_name: 'Updated Player A',
+        batting_hand: 'LEFT',
+        bowling_hand: 'RIGHT',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body: {
+      data: { display_name: string; batting_hand: string; bowling_hand: string };
+    } = response.json();
+    expect(body.data.display_name).toBe('Updated Player A');
+    expect(body.data.batting_hand).toBe('LEFT');
+    expect(body.data.bowling_hand).toBe('RIGHT');
+
+    const row = await getTestDb()
+      .select()
+      .from(profiles)
+      .where(eq(profiles.userId, playerA))
+      .limit(1);
+    expect(row[0]?.displayName).toBe('Updated Player A');
+    expect(row[0]?.battingHand).toBe('LEFT');
+    expect(row[0]?.bowlingHand).toBe('RIGHT');
+    await app.close();
+  });
+
+  it('rejects invalid batting_hand enum in profile update', async ({ skip }) => {
+    if (!dbAvailable || !db) skip();
+    const env = createTestApiEnv({ DATABASE_URL: databaseUrl });
+    const { app } = await buildApiServer(env);
+    const token = await signTestAccessToken(env, {
+      sub: playerA,
+      email: `a-${playerA}@test.local`,
+    });
+
+    const response = await app.inject({
+      method: 'PUT',
+      url: '/api/v1/profile',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { batting_hand: 'INVALID_HAND' },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({ error: { code: 'VALIDATION_ERROR' } });
+    await app.close();
+  });
+
+  it('allows CORS preflight for PUT profile updates from browser clients', async ({ skip }) => {
+    if (!dbAvailable || !db) skip();
+    const env = createTestApiEnv({ DATABASE_URL: databaseUrl });
+    const { app } = await buildApiServer(env);
+
+    const response = await app.inject({
+      method: 'OPTIONS',
+      url: '/api/v1/profile',
+      headers: {
+        origin: 'http://localhost:3004',
+        'access-control-request-method': 'PUT',
+        'access-control-request-headers': 'authorization,content-type',
+      },
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(response.headers['access-control-allow-methods']).toContain('PUT');
+    expect(response.headers['access-control-allow-origin']).toBe('http://localhost:3004');
+    await app.close();
+  });
+
   it('rejects role=ADMIN in profile update body', async ({ skip }) => {
     if (!dbAvailable || !db) skip();
     const env = createTestApiEnv({ DATABASE_URL: databaseUrl });
