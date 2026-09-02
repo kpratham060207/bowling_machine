@@ -1,5 +1,7 @@
 import type {
+  CreateDeliveryRequest,
   CreateSessionRequest,
+  Delivery,
   MachineStatus,
   Player,
   PracticeSession,
@@ -174,6 +176,14 @@ export class ApiClient {
   stopSession(sessionId: string): Promise<{ status: string }> {
     return this.request<{ status: string }>(`/api/v1/sessions/${sessionId}/stop`, {
       method: 'POST',
+    });
+  }
+
+  /** Creates a delivery for the session — high-level user parameters only. */
+  createDelivery(sessionId: string, body: CreateDeliveryRequest): Promise<Delivery> {
+    return this.request<Delivery>(`/api/v1/sessions/${sessionId}/deliveries`, {
+      method: 'POST',
+      body: JSON.stringify(body),
     });
   }
 }

@@ -2,25 +2,34 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import type { PracticeSession } from '@bowling-machine/api-contracts';
+import { InteractivePitch } from '@/components/interactive-pitch';
+import { PracticeSetupControls, PracticeSetupReview } from '@/components/practice-setup-controls';
 import { Alert } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useAuthenticatedServices } from '@/hooks/use-authenticated-services';
 import { ApiClientError } from '@/lib/api/errors';
+import { usePracticeContext } from '@/lib/practice/practice-context';
+import { setupStateToDeliveryInput, validatePracticeSetup } from '@/lib/practice/setup-state';
 
 /**
- * Practice setup shell — placeholder for Phase 1H-B interactive pitch configuration.
- * Does NOT send placeholder delivery requests or fake coordinates.
+ * Practice setup — interactive pitch configuration and delivery submission.
+ * Submits high-level parameters to Phase 1G orchestration; no machine physics here.
  */
 function PracticeSetupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('sessionId');
+  const { setupState, updateSetupState, setActiveSessionId } = usePracticeContext();
   const { api } = useAuthenticatedServices();
   const [session, setSession] = useState<PracticeSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showReview, setShowReview] = useState(false);
+
+  const validation = useMemo(() => validatePracticeSetup(setupState), [setupState]);
 
   useEffect(() => {
     if (!sessionId) {
@@ -29,26 +38,50 @@ function PracticeSetupContent() {
       return;
     }
 
+    setActiveSessionId(sessionId);
+
     void (async () => {
       try {
         const data = await api.getSession(sessionId);
         setSession(data);
+
+        if (data.deliveries.length > 0) {
+          router.replace(`/app/practice/session/${sessionId}`);
+        }
       } catch (err) {
         setError(err instanceof ApiClientError ? err.displayMessage : 'Failed to load session');
       } finally {
         setLoading(false);
       }
     })();
-  }, [api, sessionId]);
+  }, [api, sessionId, setActiveSessionId, router]);
+
+  async function handleStartPractice() {
+    if (!sessionId || !validation.valid || submitting) {
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const body = setupStateToDeliveryInput(setupState);
+      await api.createDelivery(sessionId, body);
+      router.push(`/app/practice/session/${sessionId}`);
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.displayMessage : 'Failed to start practice');
+      setSubmitting(false);
+    }
+  }
 
   if (loading) {
     return <LoadingSpinner label="Loading session" />;
   }
 
-  if (error || !session) {
+  if (error && !session) {
     return (
       <div className="space-y-4">
-        <Alert variant="error">{error ?? 'Session not found'}</Alert>
+        <Alert variant="error">{error}</Alert>
         <Link href="/app/practice/connect" className="btn-secondary">
           Connect to a machine
         </Link>
@@ -56,50 +89,87 @@ function PracticeSetupContent() {
     );
   }
 
+  if (!session) {
+    return <Alert variant="error">Session not found</Alert>;
+  }
+
   return (
     <div className="space-y-6">
       <section className="space-y-2">
         <h1 className="text-2xl font-bold">Practice setup</h1>
         <p className="text-sm text-slate-600">
-          Session <span className="font-mono text-xs">{session.session_id}</span> · {session.status}
+          Configure your delivery, review, then start practice on the machine.
         </p>
       </section>
 
-      <section className="card space-y-4">
-        <h2 className="text-lg font-semibold">Interactive pitch configuration</h2>
-        <p className="text-sm text-slate-600">
-          Choose where you want the ball to pitch, set speed and ball type, then start your delivery
-          sequence.
-        </p>
+      {error ? <Alert variant="error">{error}</Alert> : null}
 
-        {/* Phase 1H-B placeholder — intentionally non-functional */}
-        <div
-          className="flex min-h-48 flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-100 px-4 py-8 text-center"
-          aria-disabled="true"
-          role="img"
-          aria-label="Interactive pitch configuration placeholder"
-        >
-          <p className="text-sm font-medium text-slate-700">Pitch map coming in Phase 1H-B</p>
-          <p className="mt-1 max-w-sm text-xs text-slate-500">
-            Tap-to-target selection, speed controls, and ball type cards will appear here.
-          </p>
-        </div>
-      </section>
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        <section className="card">
+          <InteractivePitch
+            value={setupState.target}
+            onChange={(target) => {
+              updateSetupState({ target });
+            }}
+          />
+        </section>
 
-      <section className="flex flex-col gap-3 sm:flex-row">
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => {
-            router.push(`/app/practice/session/${session.session_id}`);
-          }}
-        >
-          Open live session
-        </button>
-        <Link href="/app/practice/connect" className="btn-secondary text-center">
-          Back to machine
-        </Link>
-      </section>
+        <section className="card">
+          <PracticeSetupControls
+            state={setupState}
+            onChange={updateSetupState}
+            disabled={submitting}
+          />
+        </section>
+      </div>
+
+      {!showReview ? (
+        <section className="flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={!validation.valid || submitting}
+            onClick={() => {
+              setShowReview(true);
+            }}
+          >
+            Review configuration
+          </button>
+          <Link href="/app/practice/connect" className="btn-secondary text-center">
+            Back to machine
+          </Link>
+        </section>
+      ) : (
+        <section className="card space-y-4">
+          <h2 className="text-lg font-semibold">Review</h2>
+          <PracticeSetupReview state={setupState} />
+
+          {!validation.valid ? (
+            <Alert variant="warning">{validation.errors.join(' · ')}</Alert>
+          ) : null}
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={!validation.valid || submitting}
+              onClick={() => void handleStartPractice()}
+            >
+              {submitting ? 'Starting practice…' : 'Start Practice'}
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={submitting}
+              onClick={() => {
+                setShowReview(false);
+              }}
+            >
+              Edit
+            </button>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

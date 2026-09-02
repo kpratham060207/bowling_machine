@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { PracticeSession, WebSocketEvent } from '@bowling-machine/api-contracts';
 import { MachineStatusPanel } from '@/components/machine-status-panel';
 import { Alert } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useAuthenticatedServices } from '@/hooks/use-authenticated-services';
 import { ApiClientError } from '@/lib/api/errors';
+import { BALL_TYPE_LABELS } from '@/lib/practice/setup-state';
 import { usePracticeContext } from '@/lib/practice/practice-context';
 
 /** Live session execution shell — receives WebSocket updates and supports stop. */
@@ -112,6 +113,24 @@ export default function LiveSessionPage() {
   const liveStatus = practice.liveMachineStatus;
   const currentDelivery = session.deliveries.find((d) => d.status === 'EXECUTING') ?? null;
 
+  /** Progress within the current delivery sequence — only when backend provides counts. */
+  const deliveryProgress = useMemo(() => {
+    if (!currentDelivery) {
+      return null;
+    }
+    const planned = currentDelivery.requested.number_of_balls;
+    const deliveredInSession = session.total_balls_delivered;
+    if (planned <= 0) {
+      return null;
+    }
+    return {
+      sequenceLabel: `Delivery ${currentDelivery.sequence_number}`,
+      ballsLabel: `${deliveredInSession} of ${session.total_balls_planned} balls delivered in session`,
+      ballType: BALL_TYPE_LABELS[currentDelivery.requested.ball_type],
+      speedKmh: currentDelivery.requested.desired_speed_kmh,
+    };
+  }, [currentDelivery, session.total_balls_delivered, session.total_balls_planned]);
+
   return (
     <div className="space-y-6">
       <section className="space-y-2">
@@ -153,10 +172,16 @@ export default function LiveSessionPage() {
           {session.total_balls_delivered}/{session.total_balls_planned} balls delivered
         </p>
         {currentDelivery ? (
-          <p className="text-sm">
-            Current delivery #{currentDelivery.sequence_number} —{' '}
-            <span className="capitalize">{currentDelivery.status.toLowerCase()}</span>
-          </p>
+          <div className="space-y-1 text-sm">
+            <p>
+              {deliveryProgress?.sequenceLabel} —{' '}
+              <span className="capitalize">{currentDelivery.status.toLowerCase()}</span>
+            </p>
+            <p className="text-slate-600">{deliveryProgress?.ballsLabel}</p>
+            <p className="text-slate-600">
+              {deliveryProgress?.ballType} · {deliveryProgress?.speedKmh} km/h
+            </p>
+          </div>
         ) : (
           <p className="text-sm text-slate-500">No delivery executing</p>
         )}
