@@ -36,11 +36,17 @@ export default function AppDashboardPage() {
       <section className="card space-y-3">
         <h1 className="text-2xl font-bold text-slate-900">Practice dashboard</h1>
         <p className="text-sm text-slate-600">
-          Connect to a bowling machine, start a session, and track your progress.
+          Configure deliveries, calculate machine parameters, and optionally connect a machine to
+          execute them.
         </p>
-        <Link href="/app/practice/connect" className="btn-primary">
-          Start practice
-        </Link>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <Link href="/app/practice/setup" className="btn-primary text-center">
+            Configure practice
+          </Link>
+          <Link href="/app/practice/connect" className="btn-secondary text-center">
+            Connect to machine
+          </Link>
+        </div>
       </section>
 
       <section className="space-y-3">
@@ -51,11 +57,16 @@ export default function AppDashboardPage() {
         {!loading && !error && recent.length === 0 ? (
           <EmptyState
             title="No practice sessions yet"
-            description="Start a practice session to begin training against the machine simulator."
+            description="Configure a delivery and calculate machine parameters — a connected machine is only required for physical execution."
             action={
-              <Link href="/app/practice/connect" className="btn-secondary">
-                Connect to a machine
-              </Link>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Link href="/app/practice/setup" className="btn-primary">
+                  Configure practice
+                </Link>
+                <Link href="/app/practice/connect" className="btn-secondary">
+                  Connect to a machine
+                </Link>
+              </div>
             }
           />
         ) : null}

@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { WebSocketEvent } from '@bowling-machine/api-contracts';
 import { ControlLockBadge } from '@/components/control-lock-badge';
 import { MachineStatusPanel } from '@/components/machine-status-panel';
@@ -20,7 +20,17 @@ import { resolveControlLockUiState, type ControlLockUiState } from '@/lib/machin
  * identify machine → verify availability → acquire control → home → create session
  */
 export default function ConnectMachinePage() {
+  return (
+    <Suspense fallback={<LoadingSpinner label="Loading connect" />}>
+      <ConnectMachineContent />
+    </Suspense>
+  );
+}
+
+function ConnectMachineContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get('returnTo');
   const practice = usePracticeContext();
   const [machines, setMachines] = useState<MachineSummary[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -143,7 +153,15 @@ export default function ConnectMachinePage() {
     try {
       const session = await api.createSession({ machine_id: selectedId });
       practice.setActiveSessionId(session.session_id);
-      router.push(`/app/practice/setup?sessionId=${session.session_id}`);
+      if (returnTo) {
+        const separator = returnTo.includes('?') ? '&' : '?';
+        const destination = returnTo.includes('sessionId=')
+          ? returnTo
+          : `${returnTo}${separator}sessionId=${session.session_id}`;
+        router.push(destination);
+      } else {
+        router.push(`/app/practice/setup?sessionId=${session.session_id}`);
+      }
     } catch (err) {
       setError(err instanceof ApiClientError ? err.displayMessage : 'Session creation failed');
     } finally {

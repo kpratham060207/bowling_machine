@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import type { PracticePlan } from '@bowling-machine/api-contracts';
+import type { CalculationPreviewResponse, PracticePlan } from '@bowling-machine/api-contracts';
+import { DeliveryCalculationResultPanel } from '@/components/calculation-preview-panel';
 import { InteractivePitch } from '@/components/interactive-pitch';
 import { PracticeSetupControls, PracticeSetupReview } from '@/components/practice-setup-controls';
 import { Alert } from '@/components/ui/alert';
@@ -11,6 +12,13 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useAuthenticatedServices } from '@/hooks/use-authenticated-services';
 import { usePracticeContext } from '@/lib/practice/practice-context';
 import { ApiClientError } from '@/lib/api/errors';
+import type { MachineSummary } from '@/lib/api/client';
+import {
+  getExecutionAvailability,
+  getMachineConnectionLabel,
+  getMachineConnectionState,
+  resolveCalculationMachineId,
+} from '@/lib/practice/operating-context';
 import {
   setupStateToDeliveryInput,
   validatePracticeSetup,
@@ -29,7 +37,7 @@ function planToSetup(plan: PracticePlan): PracticeSetupState {
   };
 }
 
-/** View, edit, delete, or start a saved practice plan. */
+/** View, edit, calculate, or start a saved practice plan — machine optional until execution. */
 export default function PlanDetailPage() {
   const params = useParams<{ planId: string }>();
   const router = useRouter();
@@ -37,14 +45,48 @@ export default function PlanDetailPage() {
   const { api } = useAuthenticatedServices();
   const [plan, setPlan] = useState<PracticePlan | null>(null);
   const [setup, setSetup] = useState<PracticeSetupState | null>(null);
+  const [authorizedMachines, setAuthorizedMachines] = useState<MachineSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [calculating, setCalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [calculationResult, setCalculationResult] = useState<CalculationPreviewResponse | null>(
+    null,
+  );
 
   const validation = useMemo(
     () => (setup ? validatePracticeSetup(setup) : { valid: false, errors: [] }),
     [setup],
   );
+
+  const selectedMachineId =
+    practice.selectedMachine && 'machine_id' in practice.selectedMachine
+      ? practice.selectedMachine.machine_id
+      : null;
+
+  const calculationMachineId = resolveCalculationMachineId({
+    sessionMachineId: null,
+    selectedMachineId,
+    authorizedMachines,
+  });
+
+  const machineLabel = getMachineConnectionLabel(
+    getMachineConnectionState(practice.selectedMachine, practice.liveMachineStatus),
+  );
+
+  const executionAvailability = getExecutionAvailability({
+    selectedMachine: practice.selectedMachine,
+    liveMachineStatus: practice.liveMachineStatus,
+    controlLock: practice.controlLock,
+    sessionId: practice.activeSessionId,
+  });
+
+  useEffect(() => {
+    void api
+      .listMachines()
+      .then(setAuthorizedMachines)
+      .catch(() => undefined);
+  }, [api]);
 
   useEffect(() => {
     void (async () => {
@@ -72,6 +114,7 @@ export default function PlanDetailPage() {
       });
       setPlan(updated);
       setSetup(planToSetup(updated));
+      setCalculationResult(null);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.displayMessage : 'Failed to update plan');
     } finally {
@@ -91,6 +134,25 @@ export default function PlanDetailPage() {
     }
   }
 
+  async function handleCalculate() {
+    if (!setup || !validation.valid || calculating) return;
+    setCalculating(true);
+    setError(null);
+    try {
+      const delivery = setupStateToDeliveryInput(setup);
+      const result = await api.previewCalculation({
+        ...delivery,
+        ...(calculationMachineId ? { machine_id: calculationMachineId } : {}),
+      });
+      setCalculationResult(result);
+    } catch (err) {
+      setCalculationResult(null);
+      setError(err instanceof ApiClientError ? err.displayMessage : 'Failed to calculate delivery');
+    } finally {
+      setCalculating(false);
+    }
+  }
+
   async function handleStart() {
     if (!plan || busy) return;
     const machineId =
@@ -99,7 +161,7 @@ export default function PlanDetailPage() {
         : null;
 
     if (!machineId) {
-      setError('Connect to a machine first, then start this plan from the machine page.');
+      setError('Connect to a machine and acquire control before executing this plan.');
       return;
     }
 
@@ -136,6 +198,7 @@ export default function PlanDetailPage() {
             value={setup.target}
             onChange={(target) => {
               setSetup({ ...setup, target });
+              setCalculationResult(null);
             }}
           />
         </section>
@@ -144,24 +207,53 @@ export default function PlanDetailPage() {
             state={setup}
             onChange={(patch) => {
               setSetup({ ...setup, ...patch });
+              setCalculationResult(null);
             }}
-            disabled={busy}
+            disabled={busy || calculating}
           />
         </section>
       </div>
 
+      {calculationResult ? (
+        <DeliveryCalculationResultPanel
+          result={calculationResult}
+          machineLabel={machineLabel}
+          executionAvailability={executionAvailability}
+          recalculating={calculating}
+          onRecalculate={() => void handleCalculate()}
+          connectHref={`/app/practice/connect?returnTo=${encodeURIComponent(`/app/plans/${plan.plan_id}`)}`}
+        />
+      ) : null}
+
       <section className="card space-y-3">
         <h2 className="text-lg font-semibold">Review</h2>
         <PracticeSetupReview state={setup} />
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <button
             type="button"
             className="btn-primary"
-            disabled={busy}
-            onClick={() => void handleStart()}
+            disabled={!validation.valid || calculating || busy}
+            onClick={() => void handleCalculate()}
           >
-            Start practice
+            {calculating ? 'Calculating…' : 'Calculate delivery'}
           </button>
+          {practice.selectedMachine && practice.controlLock ? (
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={busy}
+              onClick={() => void handleStart()}
+            >
+              Start practice on machine
+            </button>
+          ) : (
+            <Link
+              href={`/app/practice/connect?returnTo=${encodeURIComponent(`/app/plans/${plan.plan_id}`)}`}
+              className="btn-secondary text-center"
+            >
+              Connect machine to execute
+            </Link>
+          )}
           <button
             type="button"
             className="btn-secondary"

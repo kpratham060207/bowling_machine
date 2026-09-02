@@ -1,4 +1,6 @@
 import type {
+  CalculationPreviewRequest,
+  CalculationPreviewResponse,
   CalibrationProfileDetail,
   CalibrationProfileSummary,
   AdminMachineDetail,
@@ -227,6 +229,14 @@ export class ApiClient {
     return this.request<PracticeSession>(`/api/v1/practice-plans/${planId}/start`, {
       method: 'POST',
       body: JSON.stringify({ machine_id: machineId }),
+    });
+  }
+
+  /** Software-only calculation preview — no machine command or persistence. */
+  previewCalculation(body: CalculationPreviewRequest): Promise<CalculationPreviewResponse> {
+    return this.request<CalculationPreviewResponse>('/api/v1/calculation/preview', {
+      method: 'POST',
+      body: JSON.stringify(body),
     });
   }
 

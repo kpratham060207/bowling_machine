@@ -42,11 +42,16 @@ export default function HistoryPage() {
       {!loading && !error && sessions.length === 0 ? (
         <EmptyState
           title="No practice sessions yet"
-          description="Completed and in-progress sessions will appear here."
+          description="Executed sessions appear here. You can configure and calculate deliveries without a connected machine."
           action={
-            <Link href="/app/practice/connect" className="btn-primary">
-              Start practice
-            </Link>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Link href="/app/practice/setup" className="btn-primary">
+                Configure practice
+              </Link>
+              <Link href="/app/practice/connect" className="btn-secondary">
+                Connect to a machine
+              </Link>
+            </div>
           }
         />
       ) : null}
@@ -61,6 +66,9 @@ export default function HistoryPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-semibold capitalize">{session.status.toLowerCase()}</p>
+                    {session.total_balls_delivered === 0 && session.status !== 'COMPLETED' ? (
+                      <p className="text-xs text-slate-500">No balls executed yet</p>
+                    ) : null}
                     <p className="text-sm text-slate-600">
                       {new Date(session.started_at).toLocaleString()}
                     </p>

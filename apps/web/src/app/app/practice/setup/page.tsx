@@ -3,28 +3,45 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useState } from 'react';
-import type { PracticeSession } from '@bowling-machine/api-contracts';
+import type { CalculationPreviewResponse, PracticeSession } from '@bowling-machine/api-contracts';
+import { DeliveryCalculationResultPanel } from '@/components/calculation-preview-panel';
 import { InteractivePitch } from '@/components/interactive-pitch';
 import { PracticeSetupControls, PracticeSetupReview } from '@/components/practice-setup-controls';
 import { Alert } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useAuthenticatedServices } from '@/hooks/use-authenticated-services';
 import { ApiClientError } from '@/lib/api/errors';
+import type { MachineSummary } from '@/lib/api/client';
 import { usePracticeContext } from '@/lib/practice/practice-context';
+import {
+  getExecutionAvailability,
+  getMachineConnectionLabel,
+  getMachineConnectionState,
+  resolveCalculationMachineId,
+  shouldInvalidateCalculation,
+} from '@/lib/practice/operating-context';
 import { setupStateToDeliveryInput, validatePracticeSetup } from '@/lib/practice/setup-state';
 
 /**
- * Practice setup — interactive pitch configuration and delivery submission.
- * Submits high-level parameters to Phase 1G orchestration; no machine physics here.
+ * Practice setup — works with or without a connected machine.
+ * Calculation never requires machine connection; execution uses Phase 1G when available.
  */
 function PracticeSetupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('sessionId');
-  const { setupState, updateSetupState, setActiveSessionId } = usePracticeContext();
+  const {
+    setupState,
+    updateSetupState,
+    setActiveSessionId,
+    selectedMachine,
+    controlLock,
+    liveMachineStatus,
+  } = usePracticeContext();
   const { api } = useAuthenticatedServices();
   const [session, setSession] = useState<PracticeSession | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [authorizedMachines, setAuthorizedMachines] = useState<MachineSummary[]>([]);
+  const [loading, setLoading] = useState(Boolean(sessionId));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showReview, setShowReview] = useState(false);
@@ -32,17 +49,48 @@ function PracticeSetupContent() {
   const [planName, setPlanName] = useState('');
   const [showSavePlan, setShowSavePlan] = useState(false);
   const [planSavedMessage, setPlanSavedMessage] = useState<string | null>(null);
+  const [calculationResult, setCalculationResult] = useState<CalculationPreviewResponse | null>(
+    null,
+  );
+  const [calculating, setCalculating] = useState(false);
 
   const validation = useMemo(() => validatePracticeSetup(setupState), [setupState]);
+
+  const selectedMachineId =
+    selectedMachine && 'machine_id' in selectedMachine ? selectedMachine.machine_id : null;
+
+  const calculationMachineId = resolveCalculationMachineId({
+    sessionMachineId: session?.machine_id ?? null,
+    selectedMachineId,
+    authorizedMachines,
+  });
+
+  const machineConnectionState = getMachineConnectionState(selectedMachine, liveMachineStatus);
+  const machineLabel = getMachineConnectionLabel(machineConnectionState);
+
+  const executionAvailability = getExecutionAvailability({
+    selectedMachine,
+    liveMachineStatus,
+    controlLock,
+    sessionId,
+  });
+
+  useEffect(() => {
+    void api
+      .listMachines()
+      .then(setAuthorizedMachines)
+      .catch(() => undefined);
+  }, [api]);
 
   useEffect(() => {
     if (!sessionId) {
       setLoading(false);
-      setError('Missing session. Create a practice session first.');
+      setSession(null);
       return;
     }
 
     setActiveSessionId(sessionId);
+    setLoading(true);
 
     void (async () => {
       try {
@@ -59,6 +107,45 @@ function PracticeSetupContent() {
       }
     })();
   }, [api, sessionId, setActiveSessionId, router]);
+
+  useEffect(() => {
+    if (
+      calculationResult &&
+      shouldInvalidateCalculation({
+        calculatedForMachineId: calculationResult.machine_id,
+        currentMachineId: calculationMachineId,
+      })
+    ) {
+      setCalculationResult(null);
+    }
+  }, [calculationMachineId, calculationResult]);
+
+  function clearCalculationOnInputChange(): void {
+    setCalculationResult(null);
+  }
+
+  async function handleCalculateDelivery() {
+    if (!validation.valid || calculating) {
+      return;
+    }
+
+    setCalculating(true);
+    setError(null);
+
+    try {
+      const delivery = setupStateToDeliveryInput(setupState);
+      const result = await api.previewCalculation({
+        ...delivery,
+        ...(calculationMachineId ? { machine_id: calculationMachineId } : {}),
+      });
+      setCalculationResult(result);
+    } catch (err) {
+      setCalculationResult(null);
+      setError(err instanceof ApiClientError ? err.displayMessage : 'Failed to calculate delivery');
+    } finally {
+      setCalculating(false);
+    }
+  }
 
   async function handleSaveAsPlan() {
     if (!validation.valid || savingPlan || !planName.trim()) {
@@ -107,19 +194,15 @@ function PracticeSetupContent() {
     return <LoadingSpinner label="Loading session" />;
   }
 
-  if (error && !session) {
+  if (error && sessionId && !session) {
     return (
       <div className="space-y-4">
         <Alert variant="error">{error}</Alert>
-        <Link href="/app/practice/connect" className="btn-secondary">
-          Connect to a machine
+        <Link href="/app/practice/setup" className="btn-secondary">
+          Configure without session
         </Link>
       </div>
     );
-  }
-
-  if (!session) {
-    return <Alert variant="error">Session not found</Alert>;
   }
 
   return (
@@ -127,12 +210,26 @@ function PracticeSetupContent() {
       <section className="space-y-2">
         <h1 className="text-2xl font-bold">Practice setup</h1>
         <p className="text-sm text-slate-600">
-          Configure your delivery, review, then start practice on the machine.
+          Configure your delivery and calculate machine parameters. Connect a machine only when you
+          are ready to execute.
         </p>
       </section>
 
-      {error ? <Alert variant="error">{error}</Alert> : null}
+      <section className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <h2 className="text-sm font-semibold text-slate-800">Machine status</h2>
+        <p className="mt-1 text-sm text-slate-700">{machineLabel}</p>
+        {session ? (
+          <p className="text-sm text-slate-600">
+            Session machine: {session.machine_name ?? 'Selected machine'}
+          </p>
+        ) : (
+          <p className="text-sm text-slate-600">
+            Calculation available without a connected machine.
+          </p>
+        )}
+      </section>
 
+      {error ? <Alert variant="error">{error}</Alert> : null}
       {planSavedMessage ? <Alert variant="success">{planSavedMessage}</Alert> : null}
 
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
@@ -141,6 +238,7 @@ function PracticeSetupContent() {
             value={setupState.target}
             onChange={(target) => {
               updateSetupState({ target });
+              clearCalculationOnInputChange();
             }}
           />
         </section>
@@ -148,26 +246,58 @@ function PracticeSetupContent() {
         <section className="card">
           <PracticeSetupControls
             state={setupState}
-            onChange={updateSetupState}
-            disabled={submitting}
+            onChange={(patch) => {
+              updateSetupState(patch);
+              clearCalculationOnInputChange();
+            }}
+            disabled={submitting || calculating}
           />
         </section>
       </div>
 
+      {calculationResult ? (
+        <DeliveryCalculationResultPanel
+          result={calculationResult}
+          machineLabel={machineLabel}
+          executionAvailability={executionAvailability}
+          recalculating={calculating}
+          startingPractice={submitting}
+          onRecalculate={() => void handleCalculateDelivery()}
+          onStartPractice={
+            executionAvailability === 'AVAILABLE' && sessionId
+              ? () => void handleStartPractice()
+              : undefined
+          }
+          connectHref={
+            sessionId
+              ? `/app/practice/connect?returnTo=${encodeURIComponent(`/app/practice/setup?sessionId=${sessionId}`)}`
+              : '/app/practice/connect?returnTo=%2Fapp%2Fpractice%2Fsetup'
+          }
+        />
+      ) : null}
+
       {!showReview ? (
-        <section className="flex flex-col gap-3 sm:flex-row">
+        <section className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <button
             type="button"
             className="btn-primary"
-            disabled={!validation.valid || submitting}
+            disabled={!validation.valid || calculating || submitting}
+            onClick={() => void handleCalculateDelivery()}
+          >
+            {calculating ? 'Calculating…' : 'Calculate delivery'}
+          </button>
+          <button
+            type="button"
+            className="btn-secondary"
+            disabled={!validation.valid || submitting || calculating}
             onClick={() => {
               setShowReview(true);
             }}
           >
             Review configuration
           </button>
-          <Link href="/app/practice/connect" className="btn-secondary text-center">
-            Back to machine
+          <Link href="/app/practice" className="btn-secondary text-center">
+            Back to practice
           </Link>
         </section>
       ) : (
@@ -180,14 +310,27 @@ function PracticeSetupContent() {
           ) : null}
 
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <button
-              type="button"
-              className="btn-primary"
-              disabled={!validation.valid || submitting}
-              onClick={() => void handleStartPractice()}
-            >
-              {submitting ? 'Starting practice…' : 'Start Practice'}
-            </button>
+            {executionAvailability === 'AVAILABLE' && sessionId ? (
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={!validation.valid || submitting}
+                onClick={() => void handleStartPractice()}
+              >
+                {submitting ? 'Starting practice…' : 'Start practice'}
+              </button>
+            ) : (
+              <Link
+                href={
+                  sessionId
+                    ? `/app/practice/connect?returnTo=${encodeURIComponent(`/app/practice/setup?sessionId=${sessionId}`)}`
+                    : '/app/practice/connect?returnTo=%2Fapp%2Fpractice%2Fsetup'
+                }
+                className="btn-primary text-center"
+              >
+                Connect machine to execute
+              </Link>
+            )}
             <button
               type="button"
               className="btn-secondary"
@@ -196,7 +339,7 @@ function PracticeSetupContent() {
                 setShowSavePlan((current) => !current);
               }}
             >
-              Save as Practice Plan
+              Save as practice plan
             </button>
             <button
               type="button"
@@ -219,7 +362,7 @@ function PracticeSetupContent() {
                   className="input w-full"
                   value={planName}
                   maxLength={100}
-                  placeholder="Fast Outswing Practice"
+                  placeholder="Fast outswing practice"
                   onChange={(event) => {
                     setPlanName(event.target.value);
                   }}
