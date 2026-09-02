@@ -1,6 +1,6 @@
 # ESP32 Communication Protocol
 
-> **Status:** Domain contracts implemented (Phase 1B); wire codec and gateway not implemented
+> **Status:** Wire codec and gateway implemented (Phase 1E)
 > **Last updated:** 2026-09-02
 > **Protocol version:** `1.0` (`PROTOCOL_VERSION` in `packages/api-contracts`)
 
