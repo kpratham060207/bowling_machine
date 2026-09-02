@@ -33,6 +33,8 @@ import { DeliveryOrchestrationService } from './services/delivery-orchestration.
 import { DeliveryExecutionTracker } from './services/delivery-execution-tracker.js';
 import { registerMachineWebSocketRoutes } from './websocket/machine-ws.js';
 import { registerBrowserWebSocketRoutes } from './websocket/browser-ws.js';
+import { registerCalculationRoutes } from './routes/calculation.routes.js';
+import { CalculationPreviewService } from './services/calculation-preview.service.js';
 import { BrowserWsTicketService } from './websocket/ws-ticket.service.js';
 
 export type ApiServer = Awaited<ReturnType<typeof buildApiServer>>;
@@ -63,6 +65,7 @@ export async function buildApiServer(env: ApiEnv) {
     machineConfigurationService: new MachineConfigurationService(commandService, gateway),
   });
   const machineAdminService = new MachineAdminService(db, gateway);
+  const calculationPreviewService = new CalculationPreviewService(db, machineService);
   const orchestrationEventPublisher = new OrchestrationEventPublisher(eventBus);
   const deliveryOrchestration = new DeliveryOrchestrationService(
     db,
@@ -126,6 +129,7 @@ export async function buildApiServer(env: ApiEnv) {
         sessionService,
         eventPublisher: orchestrationEventPublisher,
       });
+      registerCalculationRoutes(playerRoutes, { calculationPreviewService });
     });
 
     await protectedApi.register((adminRoutes) => {

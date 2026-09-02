@@ -4,6 +4,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  CalculationPreviewRequestSchema,
+  CalculationPreviewResponseSchema,
   CommandAcknowledgementSchema,
   DeliveryRequestSchema,
   MachineCommandSchema,
@@ -351,5 +353,58 @@ describe('Protocol versioning', () => {
   it('ProtocolVersionStringSchema validates major.minor format', () => {
     expect(ProtocolVersionStringSchema.safeParse('1.0').success).toBe(true);
     expect(ProtocolVersionStringSchema.safeParse('v1.0').success).toBe(false);
+  });
+});
+
+describe('CalculationPreviewRequestSchema', () => {
+  it('accepts valid preview request with machine_id', () => {
+    expect(
+      CalculationPreviewRequestSchema.safeParse({
+        machine_id: UUID,
+        ...validDeliveryRequest,
+      }).success,
+    ).toBe(true);
+  });
+
+  it('accepts preview request without machine_id for software-only mode', () => {
+    expect(CalculationPreviewRequestSchema.safeParse(validDeliveryRequest).success).toBe(true);
+  });
+});
+
+describe('CalculationPreviewResponseSchema', () => {
+  it('accepts valid preview response', () => {
+    expect(
+      CalculationPreviewResponseSchema.safeParse({
+        preview: true,
+        result_mode: 'SIMULATION',
+        disclaimer: 'Simulation preview',
+        machine_id: null,
+        requested: {
+          target: validPitchTarget,
+          ...validDeliveryRequest,
+        },
+        calculated: {
+          wheel1_target_rpm: 1200,
+          wheel2_target_rpm: 1180,
+          actuator1_target_position: 500,
+          actuator2_target_position: 500,
+          actuator3_target_position: 500,
+          actuator4_target_position: 500,
+          feeder_delay_ms: 250,
+          ball_count: 6,
+          first_ball_delay_ms: 0,
+          interval_ms: 3000,
+        },
+        validation: { valid: true, errors: [] },
+        calibration: {
+          profile_id: 'simulation-calibration-v1-fixture',
+          calibration_type: 'SIMULATION_CALIBRATION',
+          version: 1,
+          simulation: true,
+          is_simulation_fallback: true,
+        },
+        warnings: [],
+      }).success,
+    ).toBe(true);
   });
 });
