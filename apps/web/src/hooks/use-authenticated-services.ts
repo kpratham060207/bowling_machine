@@ -24,6 +24,9 @@ export function useAuthenticatedServices(options?: { onEvent?: (event: WebSocket
     });
   }, []);
 
+  /** Open a live socket only when the page needs machine/session events. */
+  const enableRealtime = Boolean(options?.onEvent);
+
   const connectWebSocket = useCallback(() => {
     clientRef.current?.disconnect();
 
@@ -44,11 +47,15 @@ export function useAuthenticatedServices(options?: { onEvent?: (event: WebSocket
   }, [api]);
 
   useEffect(() => {
+    if (!enableRealtime) {
+      return;
+    }
+
     connectWebSocket();
     return () => {
       clientRef.current?.disconnect();
     };
-  }, [connectWebSocket]);
+  }, [connectWebSocket, enableRealtime]);
 
   return { api, wsState, reconnectWebSocket: connectWebSocket };
 }
