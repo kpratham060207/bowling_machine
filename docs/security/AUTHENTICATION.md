@@ -54,7 +54,9 @@ Both methods produce the same Supabase session. The backend verifies JWTs identi
 4. Route handler calls `exchangeCodeForSession(code)` — session stored in HTTP-only cookies
 5. User redirected to the **same origin** that handled the callback, then to a safe internal `next` path (default `/app`)
 
-`redirectTo` uses the **live browser origin** (`window.location.origin`), not a hard-coded port. `NEXT_PUBLIC_APP_URL` is only a fallback when no live origin exists. This keeps the PKCE verifier cookie on the same host:port as `/auth/callback`. If Next.js is on `http://localhost:3004` because 3000 is busy, OAuth must return to `http://localhost:3004/auth/callback`, not `:3000`.
+`redirectTo` is built from **`window.location.origin` only** (never `NEXT_PUBLIC_APP_URL`). The `/auth/callback` route then redirects using **`request.url` origin only**. This keeps the PKCE verifier cookie on the same host:port as the callback. If Next.js is on `http://localhost:3004` because 3000 is busy, OAuth must return to `http://localhost:3004/auth/callback`, not `:3000`.
+
+**Required dashboard setting:** every origin you use must be listed under Supabase → Authentication → URL Configuration → Redirect URLs (e.g. `http://localhost:3004/auth/callback`). If only `:3000` is allow-listed, Supabase may send users to the Site URL (`localhost:3000`) after Google Allow even when the app tab was on `:3004`.
 
 **Redirect safety:** `next` must be a relative path starting with `/`. Absolute URLs and protocol-relative paths are rejected.
 
