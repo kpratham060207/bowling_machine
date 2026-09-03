@@ -16,7 +16,8 @@ test.describe('player web foundation', () => {
   test('login page renders sign-in form and Google button', async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
-    await expect(page.getByLabel('Email')).toBeVisible();
+    // Phase 1K: one identifier field accepts email or username.
+    await expect(page.getByLabel('Email or Username')).toBeVisible();
     await expect(page.getByLabel('Password')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible();
@@ -30,6 +31,12 @@ test.describe('player web foundation', () => {
   test('register page renders create account form', async ({ page }) => {
     await page.goto('/register');
     await expect(page.getByRole('heading', { name: 'Create account' })).toBeVisible();
-    await expect(page.getByLabel('Display name')).toBeVisible();
+    // Phase 1K registration: Username replaces the old Display name field.
+    await expect(page.getByLabel('Username')).toBeVisible();
+    await expect(page.getByLabel('Email')).toBeVisible();
+    await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Confirm password')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create account' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible();
   });
 });
