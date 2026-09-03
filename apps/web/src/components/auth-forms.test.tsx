@@ -44,7 +44,7 @@ describe('LoginForm', () => {
   it('renders email/password fields and Google sign-in button', () => {
     render(<LoginForm nextPath="/app/practice" />);
 
-    expect(screen.getByLabelText('Email')).toBeTruthy();
+    expect(screen.getByLabelText('Email or Username')).toBeTruthy();
     expect(screen.getByLabelText('Password')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeTruthy();

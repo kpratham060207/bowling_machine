@@ -27,6 +27,11 @@ const EnvSchema = z.object({
    * Same value as NEXT_PUBLIC_SUPABASE_ANON_KEY; never used for privileged operations.
    */
   SUPABASE_ANON_KEY: z.string().min(1),
+  /**
+   * Optional browser reset-password destination used when the request body
+   * does not provide an explicit redirect.
+   */
+  PASSWORD_RESET_REDIRECT_TO: z.string().url().optional(),
   /** Time allowed for browser WebSocket ticket authentication after connect. */
   WS_BROWSER_AUTH_TIMEOUT_MS: z.coerce.number().int().positive().default(5_000),
   /** TTL for single-use browser WebSocket tickets issued via POST /ws/browser/ticket. */

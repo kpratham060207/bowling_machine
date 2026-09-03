@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { HandPreferenceSchema } from './role.js';
+import { UsernameSchema } from './username.js';
 
 /**
  * Player self-registration request — credentials go to Supabase Auth only.
@@ -15,6 +16,7 @@ export const RegisterPlayerRequestSchema = z.object({
     .string()
     .min(1, 'Display name is required')
     .max(100, 'Display name must be at most 100 characters'),
+  username: UsernameSchema.describe('Globally unique player username (3–32 chars, a-z 0-9 _ -)'),
   batting_hand: HandPreferenceSchema.optional().default('UNSPECIFIED'),
   bowling_hand: HandPreferenceSchema.optional().default('UNSPECIFIED'),
   skill_level: z.string().max(50).optional(),

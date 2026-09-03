@@ -1,7 +1,7 @@
 # Player Account Architecture
 
-> **Status:** Implemented (Phase 1D)
-> **Last updated:** 2026-09-02
+> **Status:** Implemented (Phase 1D + Phase 1K — usernames, username login, application password)
+> **Last updated:** 2026-09-03
 
 ## Overview
 
@@ -62,19 +62,24 @@ System-level administrative role. Assigned manually (not self-service).
 
 ### Registration
 
-1. Player submits email + password + display name on `/register`
-2. Frontend calls backend `POST /api/v1/auth/register`
-3. Backend creates Supabase Auth user (service role — server only)
-4. Backend creates `users` row with role `PLAYER` and `profiles` row
-5. If provisioning fails, auth user is rolled back
-6. Frontend signs in via Supabase client; session stored in HTTP-only cookies
+1. Player fills in **Username**, **Email**, **Password**, and **Confirm Password** on `/register`
+2. Frontend validates username format and password match client-side
+3. Frontend calls backend `POST /api/v1/auth/register`
+4. Backend pre-checks username availability, then creates Supabase Auth user (service role — server only)
+5. Backend creates `users` row (`role=PLAYER`) and `profiles` row including `username`, `normalized_username`, and `has_password_credential=true`
+6. If provisioning fails, auth user is rolled back
+7. Frontend signs in via Supabase client; session stored in HTTP-only cookies
+
+Google registration uses the Google button and does not require a username at sign-up. After the first Google OAuth sign-in, the player is redirected to `/app/profile?prompt=username` to claim a username.
 
 ### Login
 
-1. Player submits credentials on `/login`
-2. Supabase Auth validates and returns session
-3. Frontend stores session in cookies via `@supabase/ssr` (not localStorage)
-4. API calls include `Authorization: Bearer <access_token>`
+1. Player enters **Email or Username** + password on `/login`
+2. If the identifier contains `@`, it is treated as an email directly
+3. Otherwise, frontend calls `POST /api/v1/auth/lookup-identifier` to resolve username → email
+4. Frontend calls `supabase.auth.signInWithPassword({ email, password })`
+5. Session stored in cookies via `@supabase/ssr` (not localStorage)
+6. API calls include `Authorization: Bearer <access_token>`
 
 ### Session restoration
 
@@ -101,15 +106,26 @@ Every protected API endpoint:
 
 Stored in `profiles` table (see [Database Design](../database/DATABASE_DESIGN.md)).
 
-| Field        | Required | Notes                                                  |
-| ------------ | -------- | ------------------------------------------------------ |
-| display_name | Yes      | Shown in UI                                            |
-| batting_hand | No       | `RIGHT`, `LEFT`, `AMBIDEXTROUS`, `UNSPECIFIED`         |
-| bowling_hand | No       | `RIGHT`, `LEFT`, `AMBIDEXTROUS`, `UNSPECIFIED`         |
-| skill_level  | No       | Self-assessment                                        |
-| preferences  | No       | JSONB: default speed, favorite ball types, UI settings |
+| Field                    | Required   | Notes                                                                |
+| ------------------------ | ---------- | -------------------------------------------------------------------- |
+| display_name             | Yes        | Shown in UI                                                          |
+| username                 | No (soft)  | Nullable; required for new registrations; existing users soft-prompted |
+| normalized_username      | No (soft)  | Lowercase form; unique index (`WHERE NOT NULL`)                      |
+| has_password_credential  | No         | Boolean; true once app password is set via Supabase Auth             |
+| batting_hand             | No         | `RIGHT`, `LEFT`, `AMBIDEXTROUS`, `UNSPECIFIED`                       |
+| bowling_hand             | No         | `RIGHT`, `LEFT`, `AMBIDEXTROUS`, `UNSPECIFIED`                       |
+| skill_level              | No         | Self-assessment                                                      |
+| preferences              | No         | JSONB: default speed, favorite ball types, UI settings               |
 
 > **Phase 1C:** Database `profiles` table MUST use `batting_hand` and `bowling_hand` columns aligned with `PlayerSchema`. The earlier single `handedness` field is superseded — no alias.
+
+### Username normalization
+
+Usernames are stored and compared as lowercase. The `normalized_username` column holds the canonical form; `username` holds the user-visible form (also lowercase as of Phase 1K). Both are the same value after normalization. See `packages/api-contracts/src/player/username.ts` for the shared validation schema.
+
+### Existing account migration (soft-prompt)
+
+Existing accounts (`username IS NULL`) continue to work normally. They can only log in with their email address until they claim a username via **Profile → Security → Username**. No existing account is blocked or deleted.
 
 Profile data is personal and not shared between users.
 

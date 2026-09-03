@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
+import type { Player } from '@bowling-machine/api-contracts';
 import { sanitizeAuthRedirectPath } from '@/lib/auth/safe-redirect';
-import { createClient } from '@/lib/supabase/server';
+import { getApiBaseUrl } from '@/lib/supabase/client';
+import { createClient, getServerUser } from '@/lib/supabase/server';
 
 /**
  * OAuth/email confirmation callback — exchanges Supabase PKCE auth code for session cookies.
@@ -35,6 +37,40 @@ export async function GET(request: Request): Promise<NextResponse> {
 
   if (error) {
     return loginWithError('auth_callback_failed');
+  }
+
+  /**
+   * We use the access token from the freshly created session to ask the
+   * application API whether this account has already claimed a username.
+   */
+  const user = await getServerUser();
+  if (!user) {
+    return NextResponse.redirect(`${appOrigin}${nextPath}`);
+  }
+
+  const { data } = await supabase.auth.getSession();
+  const accessToken = data.session?.access_token;
+
+  if (!accessToken) {
+    return NextResponse.redirect(`${appOrigin}${nextPath}`);
+  }
+
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/api/v1/profile`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (response.ok) {
+      const body = (await response.json()) as { data?: Player };
+      if (!body.data?.username) {
+        return NextResponse.redirect(`${appOrigin}/app/profile?prompt=username`);
+      }
+    }
+  } catch {
+    // Keep the existing success redirect behavior when the profile check is unavailable.
   }
 
   return NextResponse.redirect(`${appOrigin}${nextPath}`);

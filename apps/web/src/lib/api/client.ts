@@ -110,11 +110,44 @@ export class ApiClient {
     return this.request<Player>('/api/v1/profile');
   }
 
+  /** Resolves a username-style login identifier to the backing email address. */
+  async lookupLoginIdentifier(identifier: string): Promise<{ email: string } | null> {
+    const response = await fetch(`${getApiBaseUrl()}/api/v1/auth/lookup-identifier`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier }),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const json = (await response.json()) as ApiEnvelope<{ email: string }> | { email: string };
+    // Lookup endpoint returns { email } directly; the envelope shape is a fallback guard.
+    if ('data' in json && json.data.email) {
+      return { email: json.data.email };
+    }
+
+    return 'email' in json && typeof json.email === 'string' ? { email: json.email } : null;
+  }
+
+  /** Checks whether the requested username is currently available to claim. */
+  checkUsernameAvailability(username: string): Promise<{ available: boolean }> {
+    const params = new URLSearchParams({ username });
+    return this.request<{ available: boolean }>(`/api/v1/profile/username-availability?${params}`);
+  }
+
   updateProfile(body: UpdatePlayerProfileRequest): Promise<Player> {
     return this.request<Player>('/api/v1/profile', {
       method: 'PUT',
       body: JSON.stringify(body),
     });
+  }
+
+  /** Sets has_password_credential after Supabase Auth successfully stores the password. */
+  markPasswordCredentialSet(): Promise<Player> {
+    return this.updateProfile({ has_password_credential: true });
   }
 
   listMachines(): Promise<MachineSummary[]> {

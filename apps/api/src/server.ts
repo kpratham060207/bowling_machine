@@ -98,7 +98,11 @@ export async function buildApiServer(env: ApiEnv) {
   const authenticateOptional = createAuthenticationHook({ jwtVerifier, db, optional: true });
 
   registerHealthRoutes(app);
-  registerAuthRoutes(app, { db, supabaseAdmin });
+  registerAuthRoutes(app, {
+    db,
+    supabaseAdmin,
+    passwordResetRedirectTo: env.PASSWORD_RESET_REDIRECT_TO,
+  });
 
   await registerMachineWebSocketRoutes(app, { db, gateway });
   registerBrowserWebSocketRoutes(app, {

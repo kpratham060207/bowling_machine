@@ -32,6 +32,19 @@ export const PlayerSchema = z.object({
     .max(100, 'Display name must be at most 100 characters'),
   batting_hand: HandPreferenceSchema.describe('Preferred batting hand'),
   bowling_hand: HandPreferenceSchema.describe('Preferred bowling hand (for context display)'),
+  /**
+   * Username is nullable during rollout so existing players can claim one later
+   * without breaking older records.
+   */
+  username: z.string().nullable().optional().describe('Player username; null until claimed'),
+  /**
+   * Lets clients decide whether to show password-based login and reset flows
+   * without exposing any credential material.
+   */
+  has_password_credential: z
+    .boolean()
+    .optional()
+    .describe('True when an app password has been set'),
   skill_level: z
     .string()
     .max(50)

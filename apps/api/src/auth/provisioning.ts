@@ -1,11 +1,18 @@
 import { eq } from 'drizzle-orm';
 import type { Database } from '@bowling-machine/database';
 import { profiles, users } from '@bowling-machine/database';
-import type { UserRole } from '@bowling-machine/api-contracts';
+import { normalizeUsername, type UserRole } from '@bowling-machine/api-contracts';
 import { ApiHttpError } from '../errors/http-errors.js';
 
 export type ProvisionProfileInput = {
   displayName: string;
+  /**
+   * Username is optional during rollout so existing OAuth or early MVP accounts
+   * can claim one later without blocking provisioning.
+   */
+  username?: string;
+  /** True when the linked auth identity already has an app password credential. */
+  hasPasswordCredential?: boolean;
   battingHand?: 'RIGHT' | 'LEFT' | 'AMBIDEXTROUS' | 'UNSPECIFIED';
   bowlingHand?: 'RIGHT' | 'LEFT' | 'AMBIDEXTROUS' | 'UNSPECIFIED';
   skillLevel?: string;
@@ -84,6 +91,11 @@ export async function ensureApplicationUser(
       .values({
         userId: input.userId,
         displayName: input.profile.displayName,
+        username: input.profile.username ? normalizeUsername(input.profile.username) : undefined,
+        normalizedUsername: input.profile.username
+          ? normalizeUsername(input.profile.username)
+          : undefined,
+        hasPasswordCredential: input.profile.hasPasswordCredential ?? false,
         battingHand: input.profile.battingHand ?? 'UNSPECIFIED',
         bowlingHand: input.profile.bowlingHand ?? 'UNSPECIFIED',
         skillLevel: input.profile.skillLevel,

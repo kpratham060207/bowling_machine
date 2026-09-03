@@ -23,10 +23,18 @@ const sampleProfile: Player = {
 const mockApi = {
   getProfile: vi.fn(),
   updateProfile: vi.fn(),
+  checkUsernameAvailability: vi.fn(),
+  markPasswordCredentialSet: vi.fn(),
 };
 
 vi.mock('@/hooks/use-authenticated-services', () => ({
   useAuthenticatedServices: () => ({ api: mockApi, wsState: 'idle', reconnectWebSocket: vi.fn() }),
+}));
+
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => ({
+    get: () => null,
+  }),
 }));
 
 describe('AppProfilePage', () => {

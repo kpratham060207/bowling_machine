@@ -1,7 +1,7 @@
 # Authentication & Authorization
 
-> **Status:** Implemented (Phase 1D)
-> **Last updated:** 2026-09-02
+> **Status:** Implemented (Phase 1D + Phase 1K — usernames & password login)
+> **Last updated:** 2026-09-03
 
 ## Overview
 
@@ -39,12 +39,55 @@ Login and logout use the Supabase browser client. Session restoration happens au
 
 ## Sign-in methods
 
-| Method         | Flow                                                                                                        |
-| -------------- | ----------------------------------------------------------------------------------------------------------- |
-| Email/password | `signInWithPassword` on `/login` → cookie session                                                           |
-| Google OAuth   | `signInWithOAuth({ provider: 'google' })` → Google → `/auth/callback` → PKCE code exchange → cookie session |
+| Method               | Flow                                                                                                             |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Email + password     | `signInWithPassword` on `/login` → cookie session                                                                |
+| Username + password  | Frontend resolves username → email via `POST /api/v1/auth/lookup-identifier`, then `signInWithPassword`         |
+| Google OAuth         | `signInWithOAuth({ provider: 'google' })` → Google → `/auth/callback` → PKCE code exchange → cookie session     |
 
-Both methods produce the same Supabase session. The backend verifies JWTs identically — it does not distinguish login provider.
+All methods produce the same Supabase session with the same application user UUID. The backend verifies JWTs identically — it does not distinguish login provider.
+
+### Username login
+
+1. Player enters username (no `@`) on `/login`
+2. Browser calls `POST /api/v1/auth/lookup-identifier` with the username
+3. Backend normalizes the username and looks up the associated email in `profiles`
+4. Browser calls `signInWithPassword({ email, password })` using the resolved email
+5. Normal cookie session established
+
+The username is an **application-level alias** for the email. Supabase Auth remains the password authority. No new auth provider is added.
+
+**Username rules (canonical):**
+- 3–32 characters, trimmed before validation
+- Allowed characters: `a–z`, `0–9`, `_`, `-`
+- No whitespace
+- Case-insensitive: stored and compared as lowercase
+- Globally unique (enforced by `UNIQUE INDEX` on `profiles.normalized_username WHERE normalized_username IS NOT NULL`)
+
+Existing accounts without a username still work; they are soft-prompted to claim one in Profile → Security.
+
+### Application password for Google-first users
+
+A player who originally signed in via Google has no password in Supabase Auth. To enable password login:
+
+1. Player signs in with Google as usual
+2. In **Profile → Security → Application password**, player sets a new password
+3. Frontend calls `supabase.auth.updateUser({ password })` — Supabase stores the credential
+4. Frontend calls `PUT /api/v1/profile` with `{ has_password_credential: true }` to flag the account
+5. Player can now sign in with **email or username + application password** in addition to Google
+
+**Important:** the application never asks for or stores the player's Google password. The application password is a separate credential managed by Supabase Auth only.
+
+### Forgot password
+
+Unauthenticated players can request a password reset email at `/forgot-password`:
+
+1. Player enters their **email** address (username not accepted here to avoid enumeration risk)
+2. Frontend calls `POST /api/v1/auth/forgot-password`
+3. Backend calls `supabaseAdmin.auth.resetPasswordForEmail` — Supabase sends a reset link
+4. The endpoint always returns a generic success message regardless of whether the email exists
+
+`PASSWORD_RESET_REDIRECT_TO` in the API environment controls where Supabase redirects the player after they click the reset link.
 
 ### Google OAuth (PKCE)
 
@@ -112,12 +155,16 @@ When cookies are not sent to the API host (e.g. web `localhost:3000`, API `local
 
 ## Registration lifecycle
 
-1. Player submits registration on `/register`
-2. Frontend calls `POST /api/v1/auth/register` on the backend
-3. Backend uses **service role** (server only) to create Supabase Auth user
-4. Backend creates `users` (role `PLAYER`) + `profiles` rows in PostgreSQL
-5. If profile provisioning fails, auth user is deleted (no orphaned identity)
-6. Frontend signs in via Supabase to establish cookie session
+1. Player fills in **Username**, **Email**, **Password**, and **Confirm Password** on `/register`
+2. Client validates username format and password match before submitting
+3. Frontend calls `POST /api/v1/auth/register` on the backend
+4. Backend checks that the requested username is not already claimed (pre-check before auth creation)
+5. Backend uses **service role** (server only) to create Supabase Auth user with `has_password_credential: true`
+6. Backend creates `users` (role `PLAYER`) + `profiles` rows in PostgreSQL, including `username` and `normalized_username`
+7. If profile provisioning fails, auth user is deleted (no orphaned identity)
+8. Frontend signs in via Supabase to establish cookie session
+
+Google registration via `/register` uses only the Google button and does not require a username upfront. After the first successful Google OAuth sign-in, the `/auth/callback` route checks whether the player has a username. If not, the player is redirected to `/app/profile?prompt=username` to claim one.
 
 ### Safety net
 
@@ -153,17 +200,18 @@ Ownership helpers (for future session/delivery/plan routes):
 
 See [.env.example](../../.env.example).
 
-| Variable                        | Scope       | Purpose                              |
-| ------------------------------- | ----------- | ------------------------------------ |
-| `NEXT_PUBLIC_APP_URL`           | Browser     | Web app base URL (OAuth redirectTo)  |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Browser     | Supabase project URL                 |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser     | Public anon key                      |
-| `NEXT_PUBLIC_API_URL`           | Browser     | Backend API URL                      |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Server only | Auth user provisioning               |
-| `SUPABASE_JWT_SECRET`           | Server only | Verify API Bearer tokens             |
-| `SUPABASE_ANON_KEY`             | Server only | Read SSR cookies for browser WS auth |
-| `SUPABASE_URL`                  | Server only | JWT issuer validation                |
-| `DATABASE_URL`                  | Server only | PostgreSQL connection                |
+| Variable                        | Scope       | Purpose                                              |
+| ------------------------------- | ----------- | ---------------------------------------------------- |
+| `NEXT_PUBLIC_APP_URL`           | Browser     | Web app base URL (OAuth redirectTo)                  |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Browser     | Supabase project URL                                 |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser     | Public anon key                                      |
+| `NEXT_PUBLIC_API_URL`           | Browser     | Backend API URL                                      |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Server only | Auth user provisioning                               |
+| `SUPABASE_JWT_SECRET`           | Server only | Verify API Bearer tokens                             |
+| `SUPABASE_ANON_KEY`             | Server only | Read SSR cookies for browser WS auth                 |
+| `SUPABASE_URL`                  | Server only | JWT issuer validation                                |
+| `DATABASE_URL`                  | Server only | PostgreSQL connection                                |
+| `PASSWORD_RESET_REDIRECT_TO`    | Server only | Optional URL Supabase sends player to after reset    |
 
 ## Supabase development setup
 

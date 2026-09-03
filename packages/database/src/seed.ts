@@ -109,6 +109,13 @@ export async function seedDevelopmentData(databaseUrl = getDatabaseUrl()): Promi
       .values({
         userId: SEED_IDS.devUser,
         displayName: 'Dev Player',
+        /**
+         * Fixed development username so local login and availability checks
+         * have a stable known record to work with.
+         */
+        username: 'devplayer',
+        normalizedUsername: 'devplayer',
+        hasPasswordCredential: false,
         battingHand: 'RIGHT',
         bowlingHand: 'RIGHT',
         skillLevel: 'development',

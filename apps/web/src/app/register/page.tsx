@@ -1,12 +1,20 @@
 import { redirect } from 'next/navigation';
 import { RegisterForm } from '@/components/auth-forms';
+import { sanitizeAuthRedirectPath } from '@/lib/auth/safe-redirect';
 import { getServerSession } from '@/lib/supabase/server';
 
+type RegisterPageProps = {
+  searchParams: Promise<{ next?: string }>;
+};
+
 /** Registration page — redirects authenticated users to the player app. */
-export default async function RegisterPage() {
+export default async function RegisterPage({ searchParams }: RegisterPageProps) {
   const session = await getServerSession();
+  const params = await searchParams;
+  const nextPath = sanitizeAuthRedirectPath(params.next);
+
   if (session) {
-    redirect('/app');
+    redirect(nextPath);
   }
 
   return (
@@ -17,7 +25,7 @@ export default async function RegisterPage() {
           <p className="text-sm text-slate-600">Join to start practice sessions.</p>
         </div>
         <div className="card">
-          <RegisterForm />
+          <RegisterForm nextPath={nextPath} />
         </div>
       </div>
     </div>

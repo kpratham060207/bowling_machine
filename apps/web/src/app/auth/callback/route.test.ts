@@ -2,20 +2,46 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { GET } from '@/app/auth/callback/route';
 
 const exchangeCodeForSessionMock = vi.fn();
+const getSessionMock = vi.fn();
+const getServerUserMock = vi.fn();
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () =>
     Promise.resolve({
       auth: {
         exchangeCodeForSession: (...args: unknown[]) => exchangeCodeForSessionMock(...args),
+        getSession: (...args: unknown[]) => getSessionMock(...args),
       },
     }),
+  getServerUser: (...args: unknown[]) => getServerUserMock(...args),
 }));
 
 describe('auth callback route', () => {
   beforeEach(() => {
     exchangeCodeForSessionMock.mockReset();
+    getSessionMock.mockReset();
+    getServerUserMock.mockReset();
     process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3004';
+    getServerUserMock.mockResolvedValue({
+      id: '11111111-1111-4111-8111-111111111111',
+    });
+    getSessionMock.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'test-access-token',
+        },
+      },
+    });
+    // json() is intentionally synchronous in this mock — the real fetch returns a Promise.
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          data: {
+            username: 'player-one',
+          },
+        }),
+    }) as typeof fetch;
   });
 
   it('keeps post-auth redirects on the callback origin even if NEXT_PUBLIC_APP_URL differs', async () => {
