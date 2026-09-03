@@ -298,7 +298,8 @@ describe('DeliveryCalculationEngine — complete simulation example', () => {
     // SIMULATION ONLY — wheel RPM = speed * base_rpm_per_kmh (10) for FAST (multiplier 1.0)
     expect(result.parameters?.wheel1_target_rpm).toBe(1200);
     expect(result.parameters?.wheel2_target_rpm).toBe(1200);
-    // Actuator values use UNRESOLVED simulation units (reference * actuator_scale 1000)
+    // Actuator targets are 3D IK lengths (meters) from SIMULATION ONLY geometry
+    expect(result.parameters?.actuator1_target_position).toBeTypeOf('number');
     expect(result.pitch_reference?.reference_y).toBeCloseTo(Math.pow(0.73, 0.85), 5);
   });
 });

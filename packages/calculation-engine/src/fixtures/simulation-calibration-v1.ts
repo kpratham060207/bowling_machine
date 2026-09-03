@@ -1,11 +1,13 @@
-import type { SimulationCalibrationData } from '../calibration/types.js';
-
 /**
  * SIMULATION_CALIBRATION_V1 — explicit test/production-simulation fixture.
  *
  * All numeric values are SIMULATION ONLY — NOT physically validated.
- * Documented here so tests and docs reference a single source of truth.
+ * Platform geometry is a placeholder for kinematics tests until real mounts
+ * and strokes are measured.
  */
+import type { SimulationCalibrationData } from '../calibration/types.js';
+import { SIMULATION_PLATFORM_GEOMETRY_V1 } from './simulation-platform-geometry-v1.js';
+
 export const SIMULATION_CALIBRATION_V1: SimulationCalibrationData = {
   _simulation: true,
   _label: 'SIMULATION_CALIBRATION_V1',
@@ -14,7 +16,7 @@ export const SIMULATION_CALIBRATION_V1: SimulationCalibrationData = {
     max_wheel_differential_rpm: 120,
   },
   position: {
-    actuator_scale: 1000,
+    platform_geometry: SIMULATION_PLATFORM_GEOMETRY_V1,
   },
   feeder: {
     base_delay_ms: 250,

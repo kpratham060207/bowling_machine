@@ -28,7 +28,7 @@ describe('parseSimulationCalibrationData', () => {
       parseSimulationCalibrationData({
         _simulation: true,
         speed_rpm: { base_rpm_per_kmh: 'not-a-number' },
-        position: { actuator_scale: 1000 },
+        position: { platform_geometry: null },
         feeder: { base_delay_ms: 250 },
         limits: {
           min_wheel_rpm: 200,

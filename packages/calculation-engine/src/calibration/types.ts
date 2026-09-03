@@ -2,6 +2,8 @@
  * SIMULATION_CALIBRATION data shape — deterministic MVP mappings.
  * Clearly labelled simulation; NOT experimentally calibrated physical data.
  */
+import type { PlatformGeometry } from '../kinematics/types.js';
+
 export type SimulationCalibrationData = {
   _simulation: true;
   _label: 'SIMULATION_CALIBRATION_V1';
@@ -13,10 +15,10 @@ export type SimulationCalibrationData = {
   };
   position: {
     /**
-     * Scales reference coordinates to actuator simulation units.
-     * Actuator units are UNRESOLVED (UD-02) — these are arbitrary simulation values.
+     * Four-actuator platform geometry for inverse kinematics.
+     * When `_simulation: true`, joint positions are NOT measured hardware values.
      */
-    actuator_scale: number;
+    platform_geometry: PlatformGeometry;
   };
   feeder: {
     /** Base feeder delay after wheels at speed — milliseconds (simulation). */
@@ -89,7 +91,7 @@ export function parseSimulationCalibrationData(
 
   const baseRpmPerKmh = speedRecord['base_rpm_per_kmh'];
   const maxDiff = speedRecord['max_wheel_differential_rpm'];
-  const actuatorScale = positionRecord['actuator_scale'];
+  const platformGeometry = parsePlatformGeometry(positionRecord['platform_geometry']);
   const baseDelay = feederRecord['base_delay_ms'];
   const minRpm = limitsRecord['min_wheel_rpm'];
   const maxRpm = limitsRecord['max_wheel_rpm'];
@@ -99,7 +101,7 @@ export function parseSimulationCalibrationData(
   if (
     typeof baseRpmPerKmh !== 'number' ||
     typeof maxDiff !== 'number' ||
-    typeof actuatorScale !== 'number' ||
+    platformGeometry === null ||
     typeof baseDelay !== 'number' ||
     typeof minRpm !== 'number' ||
     typeof maxRpm !== 'number' ||
@@ -116,7 +118,7 @@ export function parseSimulationCalibrationData(
       base_rpm_per_kmh: baseRpmPerKmh,
       max_wheel_differential_rpm: maxDiff,
     },
-    position: { actuator_scale: actuatorScale },
+    position: { platform_geometry: platformGeometry },
     feeder: { base_delay_ms: baseDelay },
     limits: {
       min_wheel_rpm: minRpm,
@@ -125,4 +127,75 @@ export function parseSimulationCalibrationData(
       max_balls_per_sequence: maxBalls,
     },
   };
+}
+
+/** Parses platform geometry from calibration JSON — null when incomplete. */
+export function parsePlatformGeometry(value: unknown): PlatformGeometry | null {
+  if (typeof value !== 'object' || value === null) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const baseJoints = parseJointArray(record['base_joint_positions_m']);
+  const platformJoints = parseJointArray(record['platform_joint_positions_m']);
+  const nominalHeight = record['nominal_height_m'];
+  const minLength = record['minimum_actuator_length_m'];
+  const maxLength = record['maximum_actuator_length_m'];
+  const maxPitch = record['max_pitch_rad'];
+  const maxRoll = record['max_roll_rad'];
+  const simulation = record['_simulation'];
+
+  if (
+    baseJoints === null ||
+    platformJoints === null ||
+    typeof nominalHeight !== 'number' ||
+    typeof minLength !== 'number' ||
+    typeof maxLength !== 'number' ||
+    typeof maxPitch !== 'number' ||
+    typeof maxRoll !== 'number' ||
+    typeof simulation !== 'boolean'
+  ) {
+    return null;
+  }
+
+  return {
+    _simulation: simulation,
+    base_joint_positions_m: baseJoints,
+    platform_joint_positions_m: platformJoints,
+    nominal_height_m: nominalHeight,
+    minimum_actuator_length_m: minLength,
+    maximum_actuator_length_m: maxLength,
+    max_pitch_rad: maxPitch,
+    max_roll_rad: maxRoll,
+  };
+}
+
+function parseJointArray(value: unknown): PlatformGeometry['base_joint_positions_m'] | null {
+  if (!Array.isArray(value) || value.length !== 4) {
+    return null;
+  }
+
+  const joints: PlatformGeometry['base_joint_positions_m'] = [
+    { x: 0, y: 0, z: 0 },
+    { x: 0, y: 0, z: 0 },
+    { x: 0, y: 0, z: 0 },
+    { x: 0, y: 0, z: 0 },
+  ];
+
+  for (let i = 0; i < 4; i += 1) {
+    const jointUnknown: unknown = value[i];
+    if (typeof jointUnknown !== 'object' || jointUnknown === null) {
+      return null;
+    }
+    const record = jointUnknown as Record<string, unknown>;
+    const x = record['x'];
+    const y = record['y'];
+    const z = record['z'];
+    if (typeof x !== 'number' || typeof y !== 'number' || typeof z !== 'number') {
+      return null;
+    }
+    joints[i as 0 | 1 | 2 | 3] = { x, y, z };
+  }
+
+  return joints;
 }

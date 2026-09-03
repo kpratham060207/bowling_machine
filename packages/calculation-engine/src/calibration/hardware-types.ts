@@ -4,6 +4,9 @@
  * Values must come from actual measurements or manufacturer specs.
  * Unknown fields remain null; draft profiles cannot activate on HARDWARE machines.
  */
+import { parsePlatformGeometry } from './types.js';
+import type { PlatformGeometry } from '../kinematics/types.js';
+
 export type HardwareCalibrationCompleteness = 'draft' | 'validated';
 
 export type HardwareCalibrationData = {
@@ -15,9 +18,12 @@ export type HardwareCalibrationData = {
     base_rpm_per_kmh: number | null;
     max_wheel_differential_rpm: number | null;
   } | null;
-  /** Actuator mapping — units UNRESOLVED (UD-02). */
+  /**
+   * Four-actuator platform geometry — measured joint positions and stroke.
+   * Must not use simulation placeholder dimensions on HARDWARE machines.
+   */
   position?: {
-    actuator_scale: number | null;
+    platform_geometry: PlatformGeometry | null;
   } | null;
   /** Feeder timing — milliseconds. */
   feeder?: {
@@ -36,7 +42,7 @@ export type HardwareCalibrationData = {
 export const HARDWARE_ACTIVATION_REQUIRED_PATHS = [
   'speed_rpm.base_rpm_per_kmh',
   'speed_rpm.max_wheel_differential_rpm',
-  'position.actuator_scale',
+  'position.platform_geometry',
   'feeder.base_delay_ms',
   'limits.min_wheel_rpm',
   'limits.max_wheel_rpm',
@@ -92,7 +98,7 @@ function parsePositionSection(value: unknown): HardwareCalibrationData['position
   }
   const record = value as Record<string, unknown>;
   return {
-    actuator_scale: typeof record['actuator_scale'] === 'number' ? record['actuator_scale'] : null,
+    platform_geometry: parsePlatformGeometry(record['platform_geometry']),
   };
 }
 
@@ -130,7 +136,7 @@ export function getMissingHardwareActivationFields(data: HardwareCalibrationData
   const checks: Array<[string, unknown]> = [
     ['speed_rpm.base_rpm_per_kmh', data.speed_rpm?.base_rpm_per_kmh ?? null],
     ['speed_rpm.max_wheel_differential_rpm', data.speed_rpm?.max_wheel_differential_rpm ?? null],
-    ['position.actuator_scale', data.position?.actuator_scale ?? null],
+    ['position.platform_geometry', data.position?.platform_geometry ?? null],
     ['feeder.base_delay_ms', data.feeder?.base_delay_ms ?? null],
     ['limits.min_wheel_rpm', data.limits?.min_wheel_rpm ?? null],
     ['limits.max_wheel_rpm', data.limits?.max_wheel_rpm ?? null],
@@ -139,9 +145,18 @@ export function getMissingHardwareActivationFields(data: HardwareCalibrationData
   ];
 
   for (const [path, value] of checks) {
-    if (value === null || typeof value !== 'number') {
+    if (value === null) {
+      missing.push(path);
+      continue;
+    }
+    if (path !== 'position.platform_geometry' && typeof value !== 'number') {
       missing.push(path);
     }
+  }
+
+  // Hardware must not activate with simulation-only geometry placeholders.
+  if (data.position?.platform_geometry?._simulation === true) {
+    missing.push('position.platform_geometry (must be measured, not simulation)');
   }
 
   return missing;

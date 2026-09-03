@@ -106,6 +106,8 @@ Until physical hardware calibration is available:
 
 All numeric values in the fixture are labelled `_simulation: true` and documented in [Calculation Engine](./CALCULATION_ENGINE.md). They must not be treated as RPM limits, actuator ranges, or speed mappings for real hardware.
 
+Platform actuator targets use `position.platform_geometry` (base/platform joint positions in meters + stroke limits). Simulation geometry is a placeholder for kinematics only — replace with measured mounts before HARDWARE activation.
+
 ## Calibration Versioning
 
 Each calibration update increments the version number. The calculation engine uses the latest approved version. Historical versions are retained for audit and rollback.

@@ -1,4 +1,9 @@
-/** Explicit simulation calibration template for ADMIN draft profiles — not production physics. */
+/**
+ * Explicit simulation calibration template for ADMIN draft profiles.
+ * Platform geometry is SIMULATION ONLY — not measured machine dimensions.
+ */
+import { SIMULATION_PLATFORM_GEOMETRY_V1 } from '@bowling-machine/calculation-engine';
+
 export const SIMULATION_CALIBRATION_V1 = {
   _simulation: true,
   _label: 'SIMULATION_CALIBRATION_V1',
@@ -7,7 +12,7 @@ export const SIMULATION_CALIBRATION_V1 = {
     max_wheel_differential_rpm: 400,
   },
   position: {
-    actuator_scale: 100,
+    platform_geometry: SIMULATION_PLATFORM_GEOMETRY_V1,
   },
   feeder: {
     base_delay_ms: 500,

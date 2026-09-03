@@ -7,6 +7,11 @@ import { resolveEngineCalibrationData } from '../calibration/validation.js';
 import { StaticCalibrationProvider, type SimulationCalibrationData } from '../calibration/types.js';
 import { calculationError } from '../errors/calculation-error.js';
 import { SIMULATION_CALIBRATION_V1_PROFILE } from '../fixtures/simulation-calibration-v1.js';
+import {
+  ActuatorKinematicsError,
+  solveActuatorLengths,
+} from '../kinematics/actuator-inverse-kinematics.js';
+import { poseFromPitchReference } from '../kinematics/pose-from-pitch-reference.js';
 import type { PitchCoordinateMapper } from '../pitch-mapper/types.js';
 import { SimulationPitchCoordinateMapper } from '../pitch-mapper/simulation-pitch-mapper.js';
 import type { CalculationResult } from '../types/calculation-result.js';
@@ -100,6 +105,7 @@ export class DeliveryCalculationEngine {
         ballStrategy.profile,
       );
     } catch (error) {
+      const details = error instanceof ActuatorKinematicsError ? error.details : undefined;
       return failedResult({
         request,
         pitch_target,
@@ -111,6 +117,7 @@ export class DeliveryCalculationEngine {
           calculationError(
             'CALCULATION_FAILURE',
             error instanceof Error ? error.message : 'Calculation failed',
+            details,
           ),
         ],
       });
@@ -203,7 +210,13 @@ function buildTrajectory(
 
 /**
  * Converts trajectory + calibration into MachineDeliveryParameters.
- * All actuator values use UNRESOLVED simulation units (UD-02).
+ *
+ * Pipeline layers kept separate:
+ * pitch-reference → desired platform pose (height/pitch/roll) →
+ * 4-actuator inverse kinematics (3D lengths) → wheel RPM (independent).
+ *
+ * Actuator targets are Euclidean lengths in meters. Simulation geometry is
+ * labeled `_simulation: true` and is NOT measured hardware.
  */
 function calculateMachineParameters(
   request: DeliveryRequest,
@@ -230,19 +243,21 @@ function calculateMachineParameters(
   const wheel1 = round2(baseRpm + differential);
   const wheel2 = round2(baseRpm - differential);
 
-  const scale = calibration.position.actuator_scale;
-  const actuator1 = round2(trajectory.pitch_reference.reference_x * scale);
-  const actuator2 = round2(adjustedReferenceY * scale);
-  const actuator3 = round2((trajectory.pitch_reference.reference_x - 0.5) * scale);
-  const actuator4 = round2((adjustedReferenceY - 0.5) * scale);
+  const geometry = calibration.position.platform_geometry;
+  const pose = poseFromPitchReference(geometry, {
+    reference_x: trajectory.pitch_reference.reference_x,
+    reference_y: adjustedReferenceY,
+  });
+
+  const lengths_m = solveActuatorLengths(geometry, pose).lengths_m;
 
   return {
     wheel1_target_rpm: wheel1,
     wheel2_target_rpm: wheel2,
-    actuator1_target_position: actuator1,
-    actuator2_target_position: actuator2,
-    actuator3_target_position: actuator3,
-    actuator4_target_position: actuator4,
+    actuator1_target_position: lengths_m[0],
+    actuator2_target_position: lengths_m[1],
+    actuator3_target_position: lengths_m[2],
+    actuator4_target_position: lengths_m[3],
     feeder_delay_ms: calibration.feeder.base_delay_ms,
     ball_count: request.number_of_balls,
     first_ball_delay_ms: request.first_ball_delay_ms,

@@ -46,11 +46,13 @@ The exact transformation from the **pitch coordinate system** to the **machine's
 
 **Question:** What units are used for actuator positions (steps, mm, degrees, normalized)?
 
-**Context:** Machine commands include `actuator1_target_position` through `actuator4_target_position` but the unit and range are undefined.
+**Context:** Machine commands include `actuator1_target_position` through `actuator4_target_position`.
 
-**Impact:** ESP32 firmware, calculation engine, calibration system, protocol.
+**Resolved for calculation engine (software layer):** targets are **actuator lengths in meters** from 3D inverse kinematics (`Li = ||P'i − Bi||`). Conversion from length to motor steps/PWM remains a separate calibration mapping and is still unresolved for hardware.
 
-**Status:** UNRESOLVED
+**Still required before real hardware:** measured base/platform joint positions, min/max length, stroke, home/zero, screw pitch, and motor command mapping.
+
+**Status:** PARTIALLY RESOLVED — engine uses meters; hardware length↔motor mapping UNRESOLVED
 
 ---
 

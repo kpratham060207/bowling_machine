@@ -120,7 +120,8 @@ export function resolveEngineCalibrationData(
     speed.base_rpm_per_kmh === null ||
     speed.max_wheel_differential_rpm === null ||
     !position ||
-    position.actuator_scale === null ||
+    position.platform_geometry === null ||
+    position.platform_geometry._simulation ||
     !feeder ||
     feeder.base_delay_ms === null ||
     !limits ||
@@ -139,7 +140,7 @@ export function resolveEngineCalibrationData(
       base_rpm_per_kmh: speed.base_rpm_per_kmh,
       max_wheel_differential_rpm: speed.max_wheel_differential_rpm,
     },
-    position: { actuator_scale: position.actuator_scale },
+    position: { platform_geometry: position.platform_geometry },
     feeder: { base_delay_ms: feeder.base_delay_ms },
     limits: {
       min_wheel_rpm: limits.min_wheel_rpm,

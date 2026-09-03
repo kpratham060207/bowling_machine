@@ -154,6 +154,9 @@ importers:
       '@bowling-machine/api-contracts':
         specifier: workspace:*
         version: link:../../packages/api-contracts
+      '@bowling-machine/calculation-engine':
+        specifier: workspace:*
+        version: link:../../packages/calculation-engine
       '@bowling-machine/shared':
         specifier: workspace:*
         version: link:../../packages/shared
