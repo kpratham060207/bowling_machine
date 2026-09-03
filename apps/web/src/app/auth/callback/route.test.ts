@@ -18,6 +18,17 @@ describe('auth callback route', () => {
     process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3004';
   });
 
+  it('keeps post-auth redirects on the callback origin even if NEXT_PUBLIC_APP_URL differs', async () => {
+    process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
+    exchangeCodeForSessionMock.mockResolvedValue({ error: null });
+
+    const response = await GET(
+      new Request('http://localhost:3004/auth/callback?code=test-code&next=/app'),
+    );
+
+    expect(response.headers.get('location')).toBe('http://localhost:3004/app');
+  });
+
   it('exchanges a valid code and redirects to the safe destination', async () => {
     exchangeCodeForSessionMock.mockResolvedValue({ error: null });
 

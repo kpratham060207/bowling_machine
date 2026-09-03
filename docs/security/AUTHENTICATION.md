@@ -50,9 +50,11 @@ Both methods produce the same Supabase session. The backend verifies JWTs identi
 
 1. Player clicks **Continue with Google** on `/login`
 2. Browser redirects to Google consent (via Supabase)
-3. Google redirects to Supabase, then to `{NEXT_PUBLIC_APP_URL}/auth/callback?code=…&next=…`
+3. Google redirects to Supabase, then to `{live origin}/auth/callback?code=…&next=…`
 4. Route handler calls `exchangeCodeForSession(code)` — session stored in HTTP-only cookies
-5. User redirected to safe internal `next` path (default `/app`)
+5. User redirected to the **same origin** that handled the callback, then to a safe internal `next` path (default `/app`)
+
+`redirectTo` uses the **live browser origin** (`window.location.origin`), not a hard-coded port. `NEXT_PUBLIC_APP_URL` is only a fallback when no live origin exists. This keeps the PKCE verifier cookie on the same host:port as `/auth/callback`. If Next.js is on `http://localhost:3004` because 3000 is busy, OAuth must return to `http://localhost:3004/auth/callback`, not `:3000`.
 
 **Redirect safety:** `next` must be a relative path starting with `/`. Absolute URLs and protocol-relative paths are rejected.
 
@@ -70,8 +72,13 @@ Both methods produce the same Supabase session. The backend verifies JWTs identi
 5. **Authorized redirect URIs** — use your project's Supabase callback URL from the Supabase Google provider page, typically:
    - `https://<project-ref>.supabase.co/auth/v1/callback`
 6. Supabase → **Authentication** → **URL Configuration**:
-   - **Site URL**: `http://localhost:3000` (or your `NEXT_PUBLIC_APP_URL` for local dev)
-   - **Redirect URLs**: add `{NEXT_PUBLIC_APP_URL}/auth/callback` for each local port (e.g. `http://localhost:3004/auth/callback`)
+   - **Site URL**: match the origin you actually use in the browser (often `http://localhost:3004` when 3000 is taken)
+   - **Redirect URLs** (add every origin you use):
+     - `http://localhost:3000/auth/callback`
+     - `http://localhost:3004/auth/callback`
+     - `http://127.0.0.1:3004/auth/callback` if you open the app that way
+
+If Google consent succeeds but the app never logs you in, the usual cause is `redirectTo` pointing at a different port than the tab you started from. Confirm the address bar origin matches a Redirect URL above.
 
 Never commit Google Client Secret or Supabase service-role key.
 
