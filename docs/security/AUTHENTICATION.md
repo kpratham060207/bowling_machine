@@ -39,11 +39,11 @@ Login and logout use the Supabase browser client. Session restoration happens au
 
 ## Sign-in methods
 
-| Method               | Flow                                                                                                             |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Email + password     | `signInWithPassword` on `/login` → cookie session                                                                |
-| Username + password  | Frontend resolves username → email via `POST /api/v1/auth/lookup-identifier`, then `signInWithPassword`         |
-| Google OAuth         | `signInWithOAuth({ provider: 'google' })` → Google → `/auth/callback` → PKCE code exchange → cookie session     |
+| Method              | Flow                                                                                                        |
+| ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Email + password    | `signInWithPassword` on `/login` → cookie session                                                           |
+| Username + password | Frontend resolves username → email via `POST /api/v1/auth/lookup-identifier`, then `signInWithPassword`     |
+| Google OAuth        | `signInWithOAuth({ provider: 'google' })` → Google → `/auth/callback` → PKCE code exchange → cookie session |
 
 All methods produce the same Supabase session with the same application user UUID. The backend verifies JWTs identically — it does not distinguish login provider.
 
@@ -58,6 +58,7 @@ All methods produce the same Supabase session with the same application user UUI
 The username is an **application-level alias** for the email. Supabase Auth remains the password authority. No new auth provider is added.
 
 **Username rules (canonical):**
+
 - 3–32 characters, trimmed before validation
 - Allowed characters: `a–z`, `0–9`, `_`, `-`
 - No whitespace
@@ -200,18 +201,18 @@ Ownership helpers (for future session/delivery/plan routes):
 
 See [.env.example](../../.env.example).
 
-| Variable                        | Scope       | Purpose                                              |
-| ------------------------------- | ----------- | ---------------------------------------------------- |
-| `NEXT_PUBLIC_APP_URL`           | Browser     | Web app base URL (OAuth redirectTo)                  |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Browser     | Supabase project URL                                 |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser     | Public anon key                                      |
-| `NEXT_PUBLIC_API_URL`           | Browser     | Backend API URL                                      |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Server only | Auth user provisioning                               |
-| `SUPABASE_JWT_SECRET`           | Server only | Verify API Bearer tokens                             |
-| `SUPABASE_ANON_KEY`             | Server only | Read SSR cookies for browser WS auth                 |
-| `SUPABASE_URL`                  | Server only | JWT issuer validation                                |
-| `DATABASE_URL`                  | Server only | PostgreSQL connection                                |
-| `PASSWORD_RESET_REDIRECT_TO`    | Server only | Optional URL Supabase sends player to after reset    |
+| Variable                        | Scope       | Purpose                                           |
+| ------------------------------- | ----------- | ------------------------------------------------- |
+| `NEXT_PUBLIC_APP_URL`           | Browser     | Web app base URL (OAuth redirectTo)               |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Browser     | Supabase project URL                              |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser     | Public anon key                                   |
+| `NEXT_PUBLIC_API_URL`           | Browser     | Backend API URL                                   |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Server only | Auth user provisioning                            |
+| `SUPABASE_JWT_SECRET`           | Server only | Verify API Bearer tokens                          |
+| `SUPABASE_ANON_KEY`             | Server only | Read SSR cookies for browser WS auth              |
+| `SUPABASE_URL`                  | Server only | JWT issuer validation                             |
+| `DATABASE_URL`                  | Server only | PostgreSQL connection                             |
+| `PASSWORD_RESET_REDIRECT_TO`    | Server only | Optional URL Supabase sends player to after reset |
 
 ## Supabase development setup
 

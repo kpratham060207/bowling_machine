@@ -106,16 +106,16 @@ Every protected API endpoint:
 
 Stored in `profiles` table (see [Database Design](../database/DATABASE_DESIGN.md)).
 
-| Field                    | Required   | Notes                                                                |
-| ------------------------ | ---------- | -------------------------------------------------------------------- |
-| display_name             | Yes        | Shown in UI                                                          |
-| username                 | No (soft)  | Nullable; required for new registrations; existing users soft-prompted |
-| normalized_username      | No (soft)  | Lowercase form; unique index (`WHERE NOT NULL`)                      |
-| has_password_credential  | No         | Boolean; true once app password is set via Supabase Auth             |
-| batting_hand             | No         | `RIGHT`, `LEFT`, `AMBIDEXTROUS`, `UNSPECIFIED`                       |
-| bowling_hand             | No         | `RIGHT`, `LEFT`, `AMBIDEXTROUS`, `UNSPECIFIED`                       |
-| skill_level              | No         | Self-assessment                                                      |
-| preferences              | No         | JSONB: default speed, favorite ball types, UI settings               |
+| Field                   | Required  | Notes                                                                  |
+| ----------------------- | --------- | ---------------------------------------------------------------------- |
+| display_name            | Yes       | Shown in UI                                                            |
+| username                | No (soft) | Nullable; required for new registrations; existing users soft-prompted |
+| normalized_username     | No (soft) | Lowercase form; unique index (`WHERE NOT NULL`)                        |
+| has_password_credential | No        | Boolean; true once app password is set via Supabase Auth               |
+| batting_hand            | No        | `RIGHT`, `LEFT`, `AMBIDEXTROUS`, `UNSPECIFIED`                         |
+| bowling_hand            | No        | `RIGHT`, `LEFT`, `AMBIDEXTROUS`, `UNSPECIFIED`                         |
+| skill_level             | No        | Self-assessment                                                        |
+| preferences             | No        | JSONB: default speed, favorite ball types, UI settings                 |
 
 > **Phase 1C:** Database `profiles` table MUST use `batting_hand` and `bowling_hand` columns aligned with `PlayerSchema`. The earlier single `handedness` field is superseded — no alias.
 
