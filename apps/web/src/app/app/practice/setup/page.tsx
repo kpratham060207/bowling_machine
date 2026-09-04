@@ -6,6 +6,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import type { CalculationPreviewResponse, PracticeSession } from '@bowling-machine/api-contracts';
 import { DeliveryCalculationResultPanel } from '@/components/calculation-preview-panel';
 import { InteractivePitch } from '@/components/interactive-pitch';
+import { Pitch3DViewerGate } from '@/components/pitch-3d-viewer-gate';
 import { PracticeSetupControls, PracticeSetupReview } from '@/components/practice-setup-controls';
 import { Alert } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -254,6 +255,9 @@ function PracticeSetupContent() {
           />
         </section>
       </div>
+
+      {/* 3D visualization — same target_x/target_y as the 2D pitch; never writes target state */}
+      <Pitch3DViewerGate target={setupState.target} />
 
       {calculationResult ? (
         <DeliveryCalculationResultPanel

@@ -15,6 +15,7 @@ describe('InteractivePitch', () => {
   it('shows instruction when no target is selected', () => {
     render(<InteractivePitch value={null} onChange={() => undefined} />);
     expect(screen.getByText(/tap where you want the ball to pitch/i)).toBeTruthy();
+    expect(screen.getByText('Pitch target')).toBeTruthy();
   });
 
   it('calls onChange when the pitch surface is clicked', async () => {
@@ -69,5 +70,15 @@ describe('InteractivePitch', () => {
     );
     expect(document.querySelector('circle[fill="#dc2626"]')).toBeTruthy();
     expect(screen.getByText(/Target selected — tap elsewhere to adjust/i)).toBeTruthy();
+    // Length is derived automatically from the tap — not a separate manual control.
+    expect(screen.getByText('Length')).toBeTruthy();
+  });
+
+  it('highlights the derived length category for the selected target', () => {
+    // Near batter → Yorker
+    render(
+      <InteractivePitch value={{ target_x: 0.5, target_y: 0.97 }} onChange={() => undefined} />,
+    );
+    expect(screen.getAllByText('Yorker').length).toBeGreaterThan(0);
   });
 });

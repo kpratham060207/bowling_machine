@@ -2,6 +2,8 @@
 
 import type { BallType, PitchTarget } from '@bowling-machine/api-contracts';
 import clsx from 'clsx';
+import { PitchTargetSummary } from '@/components/pitch-target-summary';
+import { formatPitchDistanceM, getBowlingLengthFromTarget } from '@/lib/pitch/bowling-length';
 import {
   BALL_TYPE_LABELS,
   BALL_TYPES,
@@ -21,15 +23,8 @@ type PracticeSetupControlsProps = {
 export function PracticeSetupControls({ state, onChange, disabled }: PracticeSetupControlsProps) {
   return (
     <div className="space-y-5">
-      {/* Target feedback */}
-      <section className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-        <h3 className="text-sm font-semibold text-slate-800">Target</h3>
-        {state.target ? (
-          <p className="text-sm text-slate-600">Pitch target selected</p>
-        ) : (
-          <p className="text-sm text-amber-800">Tap the pitch to choose a landing spot</p>
-        )}
-      </section>
+      {/* Target feedback — length is derived automatically from the 2D pitch tap */}
+      <PitchTargetSummary target={state.target} />
 
       {/* Speed slider */}
       <section>
@@ -152,12 +147,16 @@ type PracticeSetupReviewProps = {
 
 /** Read-only summary shown before the player confirms delivery submission. */
 export function PracticeSetupReview({ state }: PracticeSetupReviewProps) {
+  const analysis = state.target ? getBowlingLengthFromTarget(state.target) : null;
+
   return (
     <dl className="grid gap-3 text-sm sm:grid-cols-2">
       <div>
         <dt className="font-semibold text-slate-800">Target</dt>
         <dd className="text-slate-600">
-          {state.target ? 'Selected pitch location' : 'Not selected'}
+          {analysis
+            ? `${analysis.label} · ${formatPitchDistanceM(analysis.distanceFromBatterM)} from batter · ${analysis.lateralLabel}`
+            : 'Not selected'}
         </dd>
       </div>
       <div>

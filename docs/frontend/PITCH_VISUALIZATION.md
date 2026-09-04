@@ -1,7 +1,7 @@
 # Pitch Visualization & Coordinate Architecture
 
-> **Status:** Designed (not implemented)
-> **Last updated:** 2026-09-02 (finalized pitch-selection UX)
+> **Status:** Implemented for Practice Setup (SVG 2D + optional R3F 3D visualization)
+> **Last updated:** 2026-09-05
 
 ## Overview
 
@@ -152,17 +152,22 @@ The target summary is shown again on the pre-delivery confirmation step.
 
 ### Human-Readable Target Summary
 
-The frontend displays a human-readable summary of the selected target alongside the marker. Examples of descriptions the system should **eventually** support:
+The frontend displays a human-readable summary of the selected target alongside the marker:
 
-- yorker, full, good length, short
-- outside off, middle, leg side
+- Yorker / Full / Good Length / Short / Bouncer (from `BOWLING_LENGTH_ZONES`)
+- Distance from the batter's crease in metres
+- Off side / Middle stump / Leg side (RHB-oriented lateral labels)
 
 **Rules:**
 
 - Descriptions are **display-only** — they do not replace `target_x`/`target_y` as the persisted target
-- Do **NOT** hard-code cricket-region classification unless explicitly defined in configuration
-- Region labels (if added later) must come from a configurable mapping, not inline UI logic
-- Until region classification is defined, show normalized coordinates or a generic label (e.g., "Target selected")
+- Zone boundaries live in **one** config module: `apps/web/src/lib/pitch/bowling-length.ts`
+- Classification uses `getBowlingLengthFromTarget()` — do not duplicate ranges in React components
+- The interactive **2D** pitch is the source of truth; the **3D** viewer visualizes the same target and never writes selection state
+
+### 3D visualization
+
+Practice setup loads a lightweight React Three Fiber scene (`Pitch3DViewer`) for spatial understanding (rotate / zoom / reset). It shares the same `target_x` / `target_y` and must not become a second selection surface.
 
 ### Component Structure (Planned)
 
