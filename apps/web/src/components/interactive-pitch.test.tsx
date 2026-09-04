@@ -4,7 +4,6 @@
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { InteractivePitch } from './interactive-pitch';
 
 describe('InteractivePitch', () => {
@@ -15,7 +14,6 @@ describe('InteractivePitch', () => {
   it('shows instruction when no target is selected', () => {
     render(<InteractivePitch value={null} onChange={() => undefined} />);
     expect(screen.getByText(/tap where you want the ball to pitch/i)).toBeTruthy();
-    expect(screen.getByText('Pitch target')).toBeTruthy();
   });
 
   it('calls onChange when the pitch surface is clicked', async () => {
@@ -49,7 +47,7 @@ describe('InteractivePitch', () => {
         matrixTransform: () => ({ x: 50, y: 80 }),
       }) as DOMPoint;
 
-    const user = userEvent.setup();
+    const user = (await import('@testing-library/user-event')).default.setup();
     await user.pointer({
       keys: '[MouseLeft>]',
       target: svg,
@@ -70,15 +68,15 @@ describe('InteractivePitch', () => {
     );
     expect(document.querySelector('circle[fill="#dc2626"]')).toBeTruthy();
     expect(screen.getByText(/Target selected — tap elsewhere to adjust/i)).toBeTruthy();
-    // Length is derived automatically from the tap — not a separate manual control.
-    expect(screen.getByText('Length')).toBeTruthy();
   });
 
-  it('highlights the derived length category for the selected target', () => {
-    // Near batter → Yorker
+  it('keeps the original compact pitch chrome without a length badge header', () => {
     render(
       <InteractivePitch value={{ target_x: 0.5, target_y: 0.97 }} onChange={() => undefined} />,
     );
-    expect(screen.getAllByText('Yorker').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Pitch target')).toBeNull();
+    expect(screen.queryByText('Length')).toBeNull();
+    // Zone labels remain as subtle SVG text for coaching context.
+    expect(document.querySelector('svg')?.textContent).toMatch(/Yorker/);
   });
 });

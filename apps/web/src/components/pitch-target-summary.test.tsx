@@ -16,15 +16,14 @@ describe('PitchTargetSummary', () => {
 
   it('prompts the player when no target is selected', () => {
     render(<PitchTargetSummary target={null} />);
-    expect(screen.getByText(/tap the pitch to choose/i)).toBeTruthy();
+    expect(screen.getByText(/tap the pitch to choose a landing spot/i)).toBeTruthy();
   });
 
-  it('shows coaching length and distance without raw coordinates', () => {
+  it('shows compact coaching length without raw coordinates', () => {
     render(
       <PitchTargetSummary target={{ target_x: 0.5, target_y: targetYFromDistanceFromBatter(6) }} />,
     );
-    expect(screen.getByText('Good Length')).toBeTruthy();
-    expect(screen.getByText(/6\.0 m from batter/i)).toBeTruthy();
+    expect(screen.getByText(/Good Length · 6\.0 m/i)).toBeTruthy();
     expect(screen.getByText(/Middle stump/i)).toBeTruthy();
     expect(screen.queryByText(/target_x/i)).toBeNull();
   });
@@ -46,7 +45,6 @@ describe('PracticeSetupControls length derivation', () => {
         onChange={onChange}
       />,
     );
-    // Length label lives in the Target summary heading area (ball type "Yorker" also exists).
     expect(screen.getByRole('heading', { name: 'Target' }).parentElement?.textContent).toMatch(
       /Yorker/,
     );
@@ -74,8 +72,9 @@ describe('PracticeSetupControls length derivation', () => {
         onChange={onChange}
       />,
     );
-    const targetSection = screen.getByRole('heading', { name: 'Target' }).parentElement;
-    expect(targetSection?.textContent).toMatch(/Good Length/);
+    expect(screen.getByRole('heading', { name: 'Target' }).parentElement?.textContent).toMatch(
+      /Good Length/,
+    );
 
     rerender(
       <PracticeSetupControls
@@ -89,10 +88,7 @@ describe('PracticeSetupControls length derivation', () => {
       />,
     );
     expect(screen.getByRole('heading', { name: 'Target' }).parentElement?.textContent).toMatch(
-      /Good Length/,
-    );
-    expect(screen.getByRole('heading', { name: 'Target' }).parentElement?.textContent).toMatch(
-      /6\.0 m from batter/,
+      /Good Length · 6\.0 m/,
     );
   });
 });

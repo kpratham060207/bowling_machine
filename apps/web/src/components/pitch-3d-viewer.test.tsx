@@ -48,3 +48,17 @@ describe('Pitch3DViewer', () => {
     expect(screen.getByText(/marker from the 2D selection/i)).toBeTruthy();
   });
 });
+
+describe('Pitch3DViewerGate', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('keeps the 3D viewer collapsed by default', async () => {
+    const { Pitch3DViewerGate } = await import('@/components/pitch-3d-viewer-gate');
+    render(<Pitch3DViewerGate target={null} />);
+    expect(screen.getByRole('button', { name: /3D pitch view/i })).toBeTruthy();
+    expect(screen.getByText('Show')).toBeTruthy();
+    expect(screen.queryByTestId('mock-canvas')).toBeNull();
+  });
+});

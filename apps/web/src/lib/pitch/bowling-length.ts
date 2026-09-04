@@ -53,7 +53,7 @@ export const BOWLING_LENGTH_ZONES: readonly BowlingLengthZone[] = [
     label: 'Yorker',
     minDistanceFromBatterM: 0,
     maxDistanceFromBatterM: 2.0,
-    fill: 'rgba(248, 113, 113, 0.22)',
+    fill: 'rgba(248, 113, 113, 0.10)',
     solid: '#f87171',
   },
   {
@@ -61,7 +61,7 @@ export const BOWLING_LENGTH_ZONES: readonly BowlingLengthZone[] = [
     label: 'Full',
     minDistanceFromBatterM: 2.0,
     maxDistanceFromBatterM: 4.5,
-    fill: 'rgba(251, 191, 36, 0.20)',
+    fill: 'rgba(251, 191, 36, 0.09)',
     solid: '#fbbf24',
   },
   {
@@ -69,7 +69,7 @@ export const BOWLING_LENGTH_ZONES: readonly BowlingLengthZone[] = [
     label: 'Good Length',
     minDistanceFromBatterM: 4.5,
     maxDistanceFromBatterM: 8.0,
-    fill: 'rgba(52, 211, 153, 0.22)',
+    fill: 'rgba(52, 211, 153, 0.10)',
     solid: '#34d399',
   },
   {
@@ -77,7 +77,7 @@ export const BOWLING_LENGTH_ZONES: readonly BowlingLengthZone[] = [
     label: 'Short',
     minDistanceFromBatterM: 8.0,
     maxDistanceFromBatterM: 12.5,
-    fill: 'rgba(96, 165, 250, 0.20)',
+    fill: 'rgba(96, 165, 250, 0.09)',
     solid: '#60a5fa',
   },
   {
@@ -85,7 +85,7 @@ export const BOWLING_LENGTH_ZONES: readonly BowlingLengthZone[] = [
     label: 'Bouncer',
     minDistanceFromBatterM: 12.5,
     maxDistanceFromBatterM: CRICKET_PITCH_LENGTH_M,
-    fill: 'rgba(167, 139, 250, 0.22)',
+    fill: 'rgba(167, 139, 250, 0.10)',
     solid: '#a78bfa',
   },
 ] as const;

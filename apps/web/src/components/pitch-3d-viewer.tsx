@@ -156,25 +156,18 @@ export function Pitch3DViewer({ target }: Pitch3DViewerProps) {
   const analysis = target ? getBowlingLengthFromTarget(target) : null;
 
   return (
-    <section className="card space-y-3">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-semibold text-slate-900">3D pitch view</h2>
-          <p className="mt-0.5 text-sm text-slate-600">
-            Drag to rotate · scroll or pinch to zoom. Selection stays on the 2D pitch.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="btn-secondary !min-h-9 !px-3 !py-1.5 text-xs"
-          onClick={resetCamera}
-        >
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-slate-600">
+          Drag to rotate · scroll or pinch to zoom. Selection stays on the 2D pitch.
+        </p>
+        <button type="button" className="btn-secondary" onClick={resetCamera}>
           Reset view
         </button>
       </div>
 
       <div
-        className="relative h-64 w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-900 sm:h-80"
+        className="relative h-56 w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-900 sm:h-64"
         role="img"
         aria-label={
           analysis
@@ -187,7 +180,6 @@ export function Pitch3DViewer({ target }: Pitch3DViewerProps) {
           camera={{ position: [9, 10, 14], fov: 42, near: 0.1, far: 80 }}
           dpr={[1, 1.75]}
           gl={{ antialias: true, powerPreference: 'low-power' }}
-          // Avoid continuous re-renders when idle — OrbitControls still triggers frames while dragging.
           frameloop="demand"
         >
           <Suspense fallback={null}>
@@ -210,6 +202,6 @@ export function Pitch3DViewer({ target }: Pitch3DViewerProps) {
           ? `Showing ${analysis.label} marker from the 2D selection.`
           : 'Select a target on the 2D pitch to place the 3D marker.'}
       </p>
-    </section>
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 # Phase 1H-B — Interactive Pitch & Delivery Configuration
 
-> **Status:** Implemented (Phase 1H-B + pitch UI redesign)
+> **Status:** Implemented (Phase 1H-B + subtle pitch length/3D visualization)
 > **Last updated:** 2026-09-05
 
 ## Overview
@@ -8,6 +8,8 @@
 Phase 1H-B provides the signature player experience: an interactive perspective cricket pitch, delivery configuration controls, review step, software calculation, and optional machine execution.
 
 **Architectural rule:** The frontend stores normalized logical pitch coordinates and high-level delivery parameters only. Physical machine positioning remains backend/calibration dependent.
+
+**UX rule:** New pitch-length and 3D features must fit the existing practice-setup visual hierarchy. The 2D pitch + delivery controls remain primary; 3D is optional and collapsed by default.
 
 ## Architecture
 
@@ -59,13 +61,14 @@ The length category is display-only. Delivery requests still send `target_x` / `
 
 ## 2D ↔ 3D synchronization
 
-| Surface            | Role                                     | Writes target? |
-| ------------------ | ---------------------------------------- | -------------- |
-| InteractivePitch   | Authoritative target selection           | Yes            |
-| PitchTargetSummary | Coaching labels / distance               | No             |
-| Pitch3DViewer      | Rotate/zoom visualization of same target | No             |
+| Surface            | Role                                           | Writes target? |
+| ------------------ | ---------------------------------------------- | -------------- |
+| InteractivePitch   | Authoritative target selection                 | Yes            |
+| PitchTargetSummary | Compact coaching labels / distance             | No             |
+| Pitch3DViewerGate  | Optional collapsed section; loads 3D on demand | No             |
+| Pitch3DViewer      | Rotate/zoom visualization of the same target   | No             |
 
-Resetting the 3D camera never clears or moves the selected target.
+Resetting the 3D camera never clears or moves the selected target. The 3D section starts collapsed so it does not dominate the practice page.
 
 ## Perspective mapping
 
