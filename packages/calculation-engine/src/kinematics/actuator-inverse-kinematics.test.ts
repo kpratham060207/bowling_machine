@@ -60,6 +60,19 @@ describe('solveActuatorLengths — pure pitch', () => {
     expect(lengths_m[0]).toBeCloseTo(lengths_m[1], 6);
     expect(lengths_m[2]).toBeCloseTo(lengths_m[3], 6);
   });
+
+  it('shortens front actuators and extends rear actuators for negative pitch', () => {
+    const { lengths_m } = solveActuatorLengths(geometry, {
+      height_m: geometry.nominal_height_m,
+      pitch_rad: -0.08,
+      roll_rad: 0,
+    });
+
+    expect(lengths_m[0]).toBeLessThan(lengths_m[2]);
+    expect(lengths_m[1]).toBeLessThan(lengths_m[3]);
+    expect(lengths_m[0]).toBeCloseTo(lengths_m[1], 6);
+    expect(lengths_m[2]).toBeCloseTo(lengths_m[3], 6);
+  });
 });
 
 describe('solveActuatorLengths — pure roll', () => {
@@ -73,6 +86,19 @@ describe('solveActuatorLengths — pure roll', () => {
     // Positive roll about +Y lowers +X (right): A1/A3 left longer than A2/A4 right
     expect(lengths_m[0]).toBeGreaterThan(lengths_m[1]);
     expect(lengths_m[2]).toBeGreaterThan(lengths_m[3]);
+    expect(lengths_m[0]).toBeCloseTo(lengths_m[2], 6);
+    expect(lengths_m[1]).toBeCloseTo(lengths_m[3], 6);
+  });
+
+  it('shortens left actuators and extends right actuators for negative roll', () => {
+    const { lengths_m } = solveActuatorLengths(geometry, {
+      height_m: geometry.nominal_height_m,
+      pitch_rad: 0,
+      roll_rad: -0.08,
+    });
+
+    expect(lengths_m[0]).toBeLessThan(lengths_m[1]);
+    expect(lengths_m[2]).toBeLessThan(lengths_m[3]);
     expect(lengths_m[0]).toBeCloseTo(lengths_m[2], 6);
     expect(lengths_m[1]).toBeCloseTo(lengths_m[3], 6);
   });
@@ -92,7 +118,7 @@ describe('solveActuatorLengths — combined pitch + roll', () => {
 });
 
 describe('solveActuatorLengths — unreachable pose', () => {
-  it('rejects when an actuator exceeds its allowed stroke', () => {
+  it('rejects when an actuator exceeds its maximum length', () => {
     expect(() =>
       solveActuatorLengths(geometry, {
         height_m: geometry.maximum_actuator_length_m + 0.05,
@@ -100,6 +126,32 @@ describe('solveActuatorLengths — unreachable pose', () => {
         roll_rad: 0,
       }),
     ).toThrow(ActuatorKinematicsError);
+  });
+
+  it('rejects when an actuator falls below its minimum length', () => {
+    expect(() =>
+      solveActuatorLengths(geometry, {
+        height_m: geometry.minimum_actuator_length_m - 0.05,
+        pitch_rad: 0,
+        roll_rad: 0,
+      }),
+    ).toThrow(ActuatorKinematicsError);
+  });
+
+  it('does not silently clamp an over-stroke length', () => {
+    let caught: unknown;
+    try {
+      solveActuatorLengths(geometry, {
+        height_m: geometry.maximum_actuator_length_m + 0.05,
+        pitch_rad: 0,
+        roll_rad: 0,
+      });
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(ActuatorKinematicsError);
+    const details = (caught as ActuatorKinematicsError).details;
+    expect(details?.required_length_m).toBeGreaterThan(geometry.maximum_actuator_length_m);
   });
 });
 
@@ -120,6 +172,24 @@ describe('solveActuatorLengths — symmetry', () => {
     expect(positive.lengths_m[1]).toBeCloseTo(negative.lengths_m[0], 6);
     expect(positive.lengths_m[2]).toBeCloseTo(negative.lengths_m[3], 6);
     expect(positive.lengths_m[3]).toBeCloseTo(negative.lengths_m[2], 6);
+  });
+
+  it('mirrors front/rear lengths for opposite pitch', () => {
+    const positive = solveActuatorLengths(geometry, {
+      height_m: geometry.nominal_height_m,
+      pitch_rad: 0.07,
+      roll_rad: 0,
+    });
+    const negative = solveActuatorLengths(geometry, {
+      height_m: geometry.nominal_height_m,
+      pitch_rad: -0.07,
+      roll_rad: 0,
+    });
+
+    expect(positive.lengths_m[0]).toBeCloseTo(negative.lengths_m[2], 6);
+    expect(positive.lengths_m[1]).toBeCloseTo(negative.lengths_m[3], 6);
+    expect(positive.lengths_m[2]).toBeCloseTo(negative.lengths_m[0], 6);
+    expect(positive.lengths_m[3]).toBeCloseTo(negative.lengths_m[1], 6);
   });
 });
 

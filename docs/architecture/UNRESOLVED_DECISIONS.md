@@ -1,7 +1,7 @@
 # Unresolved Decisions
 
 > **Status:** Living document
-> **Last updated:** 2026-09-02 (UD-01 resolved — interaction model defined; physical mapping deferred)
+> **Last updated:** 2026-09-05 (UD-02 partially resolved — engine lengths in meters; motor mapping open)
 
 ## Overview
 

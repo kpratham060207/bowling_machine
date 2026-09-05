@@ -130,13 +130,13 @@ Within data JSON:
 
 `MachineStatus` fields:
 
-| Field                 | Unit / Semantics                                      |
-| --------------------- | ----------------------------------------------------- |
-| `wheel*_current_rpm`  | RPM (encoder) — null when unknown                     |
-| `wheel*_target_rpm`   | RPM (command target)                                  |
-| `actuator_*_position` | UNRESOLVED machine-local units (UD-02)                |
-| `imu.*`               | UNRESOLVED numeric axes                               |
-| `delivery_progress`   | Optional balls delivered/remaining in active sequence |
+| Field                 | Unit / Semantics                                                          |
+| --------------------- | ------------------------------------------------------------------------- |
+| `wheel*_current_rpm`  | RPM (encoder) — null when unknown                                         |
+| `wheel*_target_rpm`   | RPM (command target)                                                      |
+| `actuator_*_position` | meters (actuator length from IK); length↔motor mapping unresolved (UD-02) |
+| `imu.*`               | UNRESOLVED numeric axes                                                   |
+| `delivery_progress`   | Optional balls delivered/remaining in active sequence                     |
 
 ## Fault Model
 
@@ -185,3 +185,7 @@ See also:
 - Telemetry bulk persistence
 - AI / computer vision
 - Secret rotation / PKI
+
+## Follow-on
+
+Phase 1L freezes the Practice Setup UI and documents the authoritative 4-actuator inverse-kinematics architecture (simulation geometry until measured mounts exist). See [PHASE_1L.md](./PHASE_1L.md).

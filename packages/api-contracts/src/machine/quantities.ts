@@ -14,13 +14,19 @@ export const WheelRpmSchema = z
   .describe('Wheel speed in RPM; null when unknown');
 
 /**
- * Actuator position — unit UNRESOLVED (UD-02).
- * Machine-local calibration units until hardware specification is finalized.
+ * Actuator target/current position.
+ *
+ * Calculation-engine / THROW_SEQUENCE semantic (software layer): actuator
+ * length in **meters** from 3D inverse kinematics (UD-02 partially resolved).
+ * Mapping length → motor steps/PWM remains a separate calibration concern
+ * and is still unresolved for real hardware.
  */
 export const ActuatorPositionSchema = z
   .number()
   .nullable()
-  .describe('Actuator position in unresolved machine-local units (UD-02)');
+  .describe(
+    'Actuator length in meters (calculation engine); length↔motor mapping unresolved (UD-02)',
+  );
 
 export const ActuatorPositionsSchema = z.tuple([
   ActuatorPositionSchema,

@@ -5,6 +5,7 @@ import {
   SIMULATION_CALIBRATION_V1,
   SIMULATION_CALIBRATION_V1_PROFILE,
 } from '../fixtures/simulation-calibration-v1.js';
+import { SIMULATION_PLATFORM_GEOMETRY_V1 } from '../fixtures/simulation-platform-geometry-v1.js';
 import { VALID_DELIVERY_REQUEST } from '../fixtures/test-delivery-request.js';
 import { createDefaultBallTypeRegistry } from '../ball-type/ball-type-registry.js';
 import { SimulationPitchCoordinateMapper } from '../pitch-mapper/simulation-pitch-mapper.js';
@@ -191,6 +192,40 @@ describe('DeliveryCalculationEngine — invalid inputs', () => {
 
     expect(result.success).toBe(false);
     expect(result.errors[0]?.code).toBe('STRUCTURAL_VALIDATION_FAILED');
+  });
+});
+
+describe('DeliveryCalculationEngine — unreachable actuator pose', () => {
+  it('returns CALCULATION_FAILURE when IK stroke limits reject the pose', () => {
+    // Narrow stroke around a height the pose mapper cannot satisfy — deterministic reject.
+    const unreachableProfile = {
+      ...SIMULATION_CALIBRATION_V1_PROFILE,
+      profile_id: 'simulation-calibration-unreachable-stroke',
+      data: {
+        ...SIMULATION_CALIBRATION_V1,
+        position: {
+          platform_geometry: {
+            ...SIMULATION_PLATFORM_GEOMETRY_V1,
+            nominal_height_m: 0.4,
+            minimum_actuator_length_m: 0.41,
+            maximum_actuator_length_m: 0.42,
+          },
+        },
+      } as unknown as Record<string, unknown>,
+    };
+
+    const engine = new DeliveryCalculationEngine({
+      pitchMapper: new SimulationPitchCoordinateMapper(),
+      calibrationProvider: new StaticCalibrationProvider(unreachableProfile),
+      ballTypeRegistry: createDefaultBallTypeRegistry(),
+    });
+
+    const result = engine.calculate({ request: VALID_DELIVERY_REQUEST });
+
+    expect(result.success).toBe(false);
+    expect(result.errors[0]?.code).toBe('CALCULATION_FAILURE');
+    expect(result.errors[0]?.message).toMatch(/outside allowed stroke/i);
+    expect(result.parameters).toBeNull();
   });
 });
 

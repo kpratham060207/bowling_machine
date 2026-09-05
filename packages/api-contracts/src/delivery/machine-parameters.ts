@@ -9,7 +9,8 @@ import { ActuatorPositionSchema, WheelRpmSchema } from '../machine/quantities.js
  *
  * Units:
  * - wheel*_target_rpm: RPM
- * - actuator*_target_position: UNRESOLVED machine-local units (UD-02)
+ * - actuator*_target_position: meters (actuator length from IK; UD-02
+ *   length↔motor mapping still unresolved for hardware)
  * - feeder_delay_ms, first_ball_delay_ms, interval_ms: milliseconds
  */
 export const MachineDeliveryParametersSchema = z.object({

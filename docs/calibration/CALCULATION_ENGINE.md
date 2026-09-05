@@ -1,8 +1,9 @@
 # Calculation Engine
 
-> **Status:** Implemented (Phase 1F+ — SIMULATION_CALIBRATION with 3D actuator IK)
-> **Last updated:** 2026-09-03
+> **Status:** Implemented (Phase 1F+ — SIMULATION_CALIBRATION with 3D actuator IK; Phase 1L architecture freeze)
+> **Last updated:** 2026-09-05
 > **Package:** `packages/calculation-engine` (`@bowling-machine/calculation-engine`)
+> **Architecture note:** [Phase 1L — 4-actuator kinematics](../machine/PHASE_1L.md)
 
 ## Overview
 

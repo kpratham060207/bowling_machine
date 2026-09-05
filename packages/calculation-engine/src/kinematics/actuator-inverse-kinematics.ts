@@ -21,10 +21,11 @@ export class ActuatorKinematicsError extends Error {
  *
  * For pose (height, pitch, roll) with yaw fixed at 0:
  *   T = (0, 0, height_m)
- *   R = R_pitch · R_roll   (yaw = 0)
+ *   R = R_yaw · R_pitch · R_roll   (yaw forced to 0 for this mechanism)
  *   P'i = R · Pi + T
  *   Li = ||P'i − Bi||
  *
+ * The four lengths are derived from one rigid-body pose — not four independent DOFs.
  * Rejects poses that require any Li outside [min, max] — no silent clipping.
  */
 export function solveActuatorLengths(
